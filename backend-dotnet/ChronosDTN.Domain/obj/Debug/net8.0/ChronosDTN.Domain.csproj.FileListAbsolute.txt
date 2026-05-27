@@ -1,0 +1,11 @@
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Domain\bin\Debug\net8.0\ChronosDTN.Domain.deps.json
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Domain\bin\Debug\net8.0\ChronosDTN.Domain.dll
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Domain\bin\Debug\net8.0\ChronosDTN.Domain.pdb
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Domain\obj\Debug\net8.0\ChronosDTN.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Domain\obj\Debug\net8.0\ChronosDTN.Domain.AssemblyInfoInputs.cache
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Domain\obj\Debug\net8.0\ChronosDTN.Domain.AssemblyInfo.cs
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Domain\obj\Debug\net8.0\ChronosDTN.Domain.csproj.CoreCompileInputs.cache
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Domain\obj\Debug\net8.0\ChronosDTN.Domain.dll
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Domain\obj\Debug\net8.0\refint\ChronosDTN.Domain.dll
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Domain\obj\Debug\net8.0\ChronosDTN.Domain.pdb
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Domain\obj\Debug\net8.0\ref\ChronosDTN.Domain.dll

@@ -1,0 +1,17 @@
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\bin\Debug\net8.0\ChronosDTN.Infrastructure.deps.json
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\bin\Debug\net8.0\ChronosDTN.Infrastructure.dll
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\bin\Debug\net8.0\ChronosDTN.Infrastructure.pdb
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\bin\Debug\net8.0\ChronosDTN.Application.dll
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\bin\Debug\net8.0\ChronosDTN.Domain.dll
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\bin\Debug\net8.0\ChronosDTN.Application.pdb
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\bin\Debug\net8.0\ChronosDTN.Domain.pdb
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\obj\Debug\net8.0\ChronosDTN.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\obj\Debug\net8.0\ChronosDTN.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\obj\Debug\net8.0\ChronosDTN.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\obj\Debug\net8.0\ChronosDTN.Infrastructure.AssemblyInfo.cs
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\obj\Debug\net8.0\ChronosDTN.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\obj\Debug\net8.0\ChronosD.E26AD26B.Up2Date
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\obj\Debug\net8.0\ChronosDTN.Infrastructure.dll
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\obj\Debug\net8.0\refint\ChronosDTN.Infrastructure.dll
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\obj\Debug\net8.0\ChronosDTN.Infrastructure.pdb
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Infrastructure\obj\Debug\net8.0\ref\ChronosDTN.Infrastructure.dll

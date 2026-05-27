@@ -1,0 +1,365 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.API\\ChronosDTN.API.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.API\\ChronosDTN.API.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.API\\ChronosDTN.API.csproj",
+        "projectName": "ChronosDTN.API",
+        "projectPath": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.API\\ChronosDTN.API.csproj",
+        "packagesPath": "C:\\Users\\maico\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.API\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\maico\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Application\\ChronosDTN.Application.csproj": {
+                "projectPath": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Application\\ChronosDTN.Application.csproj"
+              },
+              "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Infrastructure\\ChronosDTN.Infrastructure.csproj": {
+                "projectPath": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Infrastructure\\ChronosDTN.Infrastructure.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[8.0.8, )"
+            },
+            "Microsoft.AspNetCore.OpenApi": {
+              "target": "Package",
+              "version": "[8.0.8, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[8.0.8, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[6.6.2, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.27, 8.0.27]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.win-x64",
+              "version": "[8.0.27, 8.0.27]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.27, 8.0.27]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[8.0.27, 8.0.27]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Application\\ChronosDTN.Application.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Application\\ChronosDTN.Application.csproj",
+        "projectName": "ChronosDTN.Application",
+        "projectPath": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Application\\ChronosDTN.Application.csproj",
+        "packagesPath": "C:\\Users\\maico\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Application\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\maico\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Domain\\ChronosDTN.Domain.csproj": {
+                "projectPath": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Domain\\ChronosDTN.Domain.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[8.0.8, )"
+            },
+            "Microsoft.Extensions.DependencyInjection.Abstractions": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.27, 8.0.27]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.27, 8.0.27]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[8.0.27, 8.0.27]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Domain\\ChronosDTN.Domain.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Domain\\ChronosDTN.Domain.csproj",
+        "projectName": "ChronosDTN.Domain",
+        "projectPath": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Domain\\ChronosDTN.Domain.csproj",
+        "packagesPath": "C:\\Users\\maico\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Domain\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\maico\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.27, 8.0.27]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.27, 8.0.27]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[8.0.27, 8.0.27]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Infrastructure\\ChronosDTN.Infrastructure.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Infrastructure\\ChronosDTN.Infrastructure.csproj",
+        "projectName": "ChronosDTN.Infrastructure",
+        "projectPath": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Infrastructure\\ChronosDTN.Infrastructure.csproj",
+        "packagesPath": "C:\\Users\\maico\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Infrastructure\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\maico\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Application\\ChronosDTN.Application.csproj": {
+                "projectPath": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Application\\ChronosDTN.Application.csproj"
+              },
+              "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Domain\\ChronosDTN.Domain.csproj": {
+                "projectPath": "C:\\Users\\maico\\.gemini\\antigravity\\scratch\\chronos-dtn\\backend-dotnet\\ChronosDTN.Domain\\ChronosDTN.Domain.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[8.0.8, )"
+            },
+            "Microsoft.EntityFrameworkCore.Sqlite": {
+              "target": "Package",
+              "version": "[8.0.8, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.27, 8.0.27]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.27, 8.0.27]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[8.0.27, 8.0.27]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

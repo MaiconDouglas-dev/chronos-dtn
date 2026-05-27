@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="ChronosDTN.API/ChronosDTN.API.csproj" />
+  <Project Path="ChronosDTN.Application/ChronosDTN.Application.csproj" />
+  <Project Path="ChronosDTN.Domain/ChronosDTN.Domain.csproj" />
+  <Project Path="ChronosDTN.Infrastructure/ChronosDTN.Infrastructure.csproj" />
+</Solution>

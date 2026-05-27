@@ -1,0 +1,15 @@
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Application\bin\Debug\net8.0\ChronosDTN.Application.deps.json
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Application\bin\Debug\net8.0\ChronosDTN.Application.dll
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Application\bin\Debug\net8.0\ChronosDTN.Application.pdb
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Application\bin\Debug\net8.0\ChronosDTN.Domain.dll
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Application\bin\Debug\net8.0\ChronosDTN.Domain.pdb
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Application\obj\Debug\net8.0\ChronosDTN.Application.csproj.AssemblyReference.cache
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Application\obj\Debug\net8.0\ChronosDTN.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Application\obj\Debug\net8.0\ChronosDTN.Application.AssemblyInfoInputs.cache
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Application\obj\Debug\net8.0\ChronosDTN.Application.AssemblyInfo.cs
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Application\obj\Debug\net8.0\ChronosDTN.Application.csproj.CoreCompileInputs.cache
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Application\obj\Debug\net8.0\ChronosD.2DADD219.Up2Date
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Application\obj\Debug\net8.0\ChronosDTN.Application.dll
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Application\obj\Debug\net8.0\refint\ChronosDTN.Application.dll
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Application\obj\Debug\net8.0\ChronosDTN.Application.pdb
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Application\obj\Debug\net8.0\ref\ChronosDTN.Application.dll
