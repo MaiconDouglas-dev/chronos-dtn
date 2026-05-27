@@ -10,9 +10,9 @@ export const Header: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View>
-        <Text style={styles.title}>CHRONOS DTN</Text>
-        <Text style={styles.subtitle}>Console de Sincronização Relativística</Text>
+      <View style={styles.textContainer}>
+        <Text style={styles.title} numberOfLines={1} minimumFontScale={0.8} adjustsFontSizeToFit>CHRONOS DTN</Text>
+        <Text style={styles.subtitle} numberOfLines={1} minimumFontScale={0.8} adjustsFontSizeToFit>Console de Sincronização Relativística</Text>
       </View>
       <TouchableOpacity
         style={styles.profileBadge}
@@ -21,20 +21,20 @@ export const Header: React.FC = () => {
       >
         <View style={styles.statusDotWrapper}>
           {tokenJwt ? (
-            <Wifi color="#00F5A0" size={16} />
+            <Wifi color="#00F5A0" size={14} />
           ) : (
-            <WifiOff color="#FF007A" size={16} />
+            <WifiOff color="#FF007A" size={14} />
           )}
         </View>
         <View style={styles.operatorDetails}>
-          <Text style={styles.operatorText} numberOfLines={1}>
+          <Text style={styles.operatorText} numberOfLines={1} minimumFontScale={0.8} adjustsFontSizeToFit>
             {nomeOperador || 'Modo Offline'}
           </Text>
-          <Text style={styles.serverText} numberOfLines={1}>
+          <Text style={styles.serverText} numberOfLines={1} minimumFontScale={0.8} adjustsFontSizeToFit>
             {urlServidor ? urlServidor.replace('http://', '').replace('/api', '') : 'Sem Servidor'}
           </Text>
         </View>
-        <User color="#94A3B8" size={18} style={styles.userIcon} />
+        <User color="#94A3B8" size={14} style={styles.userIcon} />
       </TouchableOpacity>
     </View>
   );
@@ -49,45 +49,52 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#232A46',
     marginBottom: 16,
+    width: '100%',
+  },
+  textContainer: {
+    flex: 1.2,
+    marginRight: 6,
+    justifyContent: 'center',
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    letterSpacing: 1.5,
+    letterSpacing: 1,
   },
   subtitle: {
     color: '#00F2FE',
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: '500',
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
   },
   profileBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#161B30',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#232A46',
-    maxWidth: 200,
+    flex: 1,
+    maxWidth: 150,
   },
   statusDotWrapper: {
-    marginRight: 6,
+    marginRight: 4,
   },
   operatorDetails: {
-    marginRight: 8,
+    marginRight: 4,
     flex: 1,
   },
   operatorText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
   },
   serverText: {
     color: '#94A3B8',
-    fontSize: 10,
+    fontSize: 8,
   },
   userIcon: {
     marginLeft: 'auto',

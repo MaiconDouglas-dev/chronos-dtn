@@ -84,7 +84,7 @@ api.interceptors.response.use(
 
     if (error.response) {
       const status = error.response.status;
-      const message = error.response.data?.message || error.response.data?.error || `Error ${status}: ${error.response.statusText}`;
+      const message = error.response.data?.message || error.response.data?.error || `Erro ${status}: ${error.response.statusText || 'Não Autorizado / Acesso Proibido'}`;
 
       if (status === 401) {
         triggerUnauthorized();

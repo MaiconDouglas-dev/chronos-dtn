@@ -45,15 +45,29 @@ export default function Profile() {
           baseURL: urlToTest,
           timeout: 4000
         });
-      } catch (err) {
-        res = await api.get('/nosatelite', {
-          baseURL: urlToTest,
-          timeout: 4000
-        });
+      } catch (err: any) {
+        if (err.response) {
+          res = err.response;
+        } else {
+          // Try C# endpoint next
+          try {
+            res = await api.get('/nosatelite', {
+              baseURL: urlToTest,
+              timeout: 4000
+            });
+          } catch (err2: any) {
+            if (err2.response) {
+              res = err2.response;
+            } else {
+              throw err2;
+            }
+          }
+        }
       }
 
       const end = Date.now();
-      if (res && (res.status === 200 || res.status === 201)) {
+      // If the server responded with 200/201, or returned 401/403/405 (means server is alive but requires auth), it is ONLINE
+      if (res && (res.status === 200 || res.status === 201 || res.status === 401 || res.status === 403 || res.status === 405)) {
         setPingStatus('SUCCESS');
         setPingLatency(end - start);
         return true;
@@ -96,26 +110,38 @@ export default function Profile() {
     setIsLoading(true);
     const codeUpper = operatorCode.trim().toUpperCase();
 
-    // Payload supports Java (username/password), C# (Username/Password), and custom (codigo_registro/codigoRegistro)
+    // Payload supports Java (username/password), C# (Usuario/Senha), and custom (codigo_registro/codigoRegistro)
     const payload = {
       username: codeUpper,
       Username: codeUpper,
+      usuario: codeUpper,
+      Usuario: codeUpper,
       password: operatorPass || 'password',
       Password: operatorPass || 'password',
+      senha: operatorPass || 'password',
+      Senha: operatorPass || 'password',
       codigoRegistro: codeUpper,
       codigo_registro: codeUpper,
     };
 
     try {
-      // Try Java endpoint first `/api/auth/login`, then C# `/api/auth/token` (or `/api/Auth/token`)
+      // Try Java (/api/autenticacao/login) and .NET (/api/autenticacao/token) first, then fallback
       let res;
       try {
-        res = await api.post('/auth/login', payload);
+        res = await api.post('/autenticacao/login', payload);
       } catch (err) {
         try {
-          res = await api.post('/Auth/token', payload);
+          res = await api.post('/autenticacao/token', payload);
         } catch (err2) {
-          res = await api.post('/login', payload);
+          try {
+            res = await api.post('/auth/login', payload);
+          } catch (err3) {
+            try {
+              res = await api.post('/Auth/token', payload);
+            } catch (err4) {
+              res = await api.post('/login', payload);
+            }
+          }
         }
       }
 

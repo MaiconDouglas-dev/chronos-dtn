@@ -9,27 +9,31 @@ interface SpaceBackgroundProps {
 }
 
 export const SpaceBackground: React.FC<SpaceBackgroundProps> = ({ children, scrollable = true }) => {
-  const content = (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#0B0E1B" />
-      <View style={styles.container}>
-        {/* Ambient Space Glows */}
-        <View style={[styles.glowBall, styles.glowPurple]} />
-        <View style={[styles.glowBall, styles.glowCyan]} />
-        <View style={styles.content}>{children}</View>
-      </View>
-    </SafeAreaView>
+  const innerContent = (
+    <View style={styles.container}>
+      {/* Ambient Space Glows */}
+      <View style={[styles.glowBall, styles.glowPurple]} />
+      <View style={[styles.glowBall, styles.glowCyan]} />
+      <View style={styles.content}>{children}</View>
+    </View>
   );
 
-  if (scrollable) {
-    return (
-      <ScrollView contentContainerStyle={styles.scrollContent} style={styles.scroll}>
-        {content}
-      </ScrollView>
-    );
-  }
-
-  return content;
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B0E1B" />
+      {scrollable ? (
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent} 
+          style={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          {innerContent}
+        </ScrollView>
+      ) : (
+        innerContent
+      )}
+    </SafeAreaView>
+  );
 };
 
 const styles = StyleSheet.create({
