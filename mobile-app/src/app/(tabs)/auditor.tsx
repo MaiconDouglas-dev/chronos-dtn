@@ -10,17 +10,17 @@ import { History, Plus, AlertCircle, ShieldCheck, Share2 } from 'lucide-react-na
 
 interface AuditTransaction {
   id: number;
-  operadora_id: number;
-  vl_creditos: number;
-  tm_lunar_bruto: number;
-  tm_terra_corrigido: number;
-  desvio_microssegundos: number;
+  idOperador: number;
+  valorCreditos: number;
+  tempoLunarBruto: number;
+  tempoTerraCorrigido: number;
+  desvioMicrossegundos: number;
   status: string;
-  hash_transacao: string;
+  hashTransacao: string;
 }
 
 export default function Auditor() {
-  const { jwtToken, setGlobalError } = useApp();
+  const { idOperador: appOpId, setGlobalError } = useApp();
   const [audits, setAudits] = useState<AuditTransaction[]>([]);
   const [filter, setFilter] = useState<'ALL' | 'AUDITED' | 'PENDING'>('ALL');
   const [isSimulated, setIsSimulated] = useState(false);
@@ -30,42 +30,67 @@ export default function Auditor() {
   const mockAudits: AuditTransaction[] = [
     {
       id: 1,
-      operadora_id: 1,
-      vl_creditos: 15000.0000,
-      tm_lunar_bruto: 1779986400000056,
-      tm_terra_corrigido: 1779986400000000,
-      desvio_microssegundos: 56,
+      idOperador: 1,
+      valorCreditos: 15000.0000,
+      tempoLunarBruto: 1779986400000056,
+      tempoTerraCorrigido: 1779986400000000,
+      desvioMicrossegundos: 56,
       status: 'AUDITED',
-      hash_transacao: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
+      hashTransacao: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
     },
     {
       id: 2,
-      operadora_id: 2,
-      vl_creditos: 450.2500,
-      tm_lunar_bruto: 1780764000000560,
-      tm_terra_corrigido: 1780764000000000,
-      desvio_microssegundos: 560,
+      idOperador: 2,
+      valorCreditos: 450.2500,
+      tempoLunarBruto: 1780764000000560,
+      tempoTerraCorrigido: 1780764000000000,
+      desvioMicrossegundos: 560,
       status: 'AUDITED',
-      hash_transacao: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+      hashTransacao: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
     },
     {
       id: 3,
-      operadora_id: 3,
-      vl_creditos: 23500.8000,
-      tm_lunar_bruto: 1781200000000840,
-      tm_terra_corrigido: 1781200000000000,
-      desvio_microssegundos: 840,
+      idOperador: 3,
+      valorCreditos: 23500.8000,
+      tempoLunarBruto: 1781200000000840,
+      tempoTerraCorrigido: 1781200000000000,
+      desvioMicrossegundos: 840,
       status: 'PENDING',
-      hash_transacao: '5c0e4871e9a3b68c4d168537612f00a6e0339d1b6192131d2ba510ff3d91789c'
+      hashTransacao: '5c0e4871e9a3b68c4d168537612f00a6e0339d1b6192131d2ba510ff3d91789c'
     }
   ];
+
+  const parseAudit = (data: any): AuditTransaction => {
+    // Standardize backend response fields to local state
+    const op = data.operator ? data.operator.id : null;
+    return {
+      id: data.id,
+      idOperador: data.idOperador ?? data.operadoraId ?? data.operadora_id ?? op ?? 1,
+      valorCreditos: data.valorCreditos ?? data.vlCreditos ?? data.vl_creditos ?? 0,
+      tempoLunarBruto: data.tempoLunarBruto ?? data.tmLunarBruto ?? data.tm_lunar_bruto ?? 0,
+      tempoTerraCorrigido: data.tempoTerraCorrigido ?? data.tmTerraCorrigido ?? data.tm_terra_corrigido ?? 0,
+      desvioMicrossegundos: data.desvioMicrossegundos ?? data.desvio_microssegundos ?? 0,
+      status: data.status || 'PENDING',
+      hashTransacao: data.hashTransacao ?? data.hash_transacao ?? '',
+    };
+  };
 
   const fetchAudits = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/audits');
+      let res;
+      try {
+        res = await api.get('/transacoes');
+      } catch {
+        res = await api.get('/transactions');
+      }
+
       if (res && res.data) {
-        setAudits(res.data);
+        // HATEOAS or array parsing
+        const rawList = Array.isArray(res.data) 
+          ? res.data 
+          : (res.data._embedded?.auditedTransactionList || res.data._embedded?.auditedTransactions || []);
+        setAudits(rawList.map(parseAudit));
         setIsSimulated(false);
       } else {
         setAudits(mockAudits);
@@ -86,14 +111,14 @@ export default function Auditor() {
   const simulateNewAudit = async () => {
     setLoading(true);
     const mockOperators = [1, 2, 3];
-    const operatorId = mockOperators[Math.floor(Math.random() * mockOperators.length)];
+    const opId = appOpId ? parseInt(appOpId.replace(/[^0-9]/g, '')) || 1 : mockOperators[Math.floor(Math.random() * mockOperators.length)];
     const credits = parseFloat((Math.random() * 5000 + 100).toFixed(2));
     
-    // Relativistic drift grows over time (let's say 56μs drift incremented)
+    // Relativistic drift grows over time (56μs drift incremented)
     const baseOffset = 1781200000000000;
-    const daysOffset = audits.length * 24 * 60 * 60 * 1000000; // microsec per day
+    const daysOffset = audits.length * 24 * 60 * 60 * 1000000;
     const earthTime = baseOffset + daysOffset;
-    const drift = audits.length * 56 + 56; // 56 μs per iteration
+    const drift = audits.length * 56 + 56;
     const lunarTime = earthTime + drift;
     
     const hexChars = '0123456789abcdef';
@@ -103,32 +128,49 @@ export default function Auditor() {
     }
 
     const payload = {
-      operadora_id: operatorId,
-      vl_creditos: credits,
-      tm_lunar_bruto: lunarTime,
-      tm_terra_corrigido: earthTime,
-      desvio_microssegundos: drift,
-      status: 'PENDING',
-      hash_transacao: randomHash
+      operadoraId: opId,
+      idOperador: opId,
+      vlCreditos: credits,
+      valorCreditos: credits,
+      tmLunarBruto: lunarTime,
+      tempoLunarBruto: lunarTime,
+      hashTransacao: randomHash,
+      status: 'PENDING'
     };
 
     try {
-      const res = await api.post('/audits', payload);
+      let res;
+      try {
+        res = await api.post('/transacoes', payload);
+      } catch {
+        res = await api.post('/transactions', payload);
+      }
+
       if (res && res.data) {
         await fetchAudits();
       } else {
-        // Local state simulate
         const newAudit: AuditTransaction = {
           id: audits.length + 1,
-          ...payload
+          idOperador: opId,
+          valorCreditos: credits,
+          tempoLunarBruto: lunarTime,
+          tempoTerraCorrigido: earthTime,
+          desvioMicrossegundos: drift,
+          status: 'PENDING',
+          hashTransacao: randomHash
         };
         setAudits([newAudit, ...audits]);
       }
     } catch (err) {
-      // Local state simulate
       const newAudit: AuditTransaction = {
         id: audits.length + 1,
-        ...payload
+        idOperador: opId,
+        valorCreditos: credits,
+        tempoLunarBruto: lunarTime,
+        tempoTerraCorrigido: earthTime,
+        desvioMicrossegundos: drift,
+        status: 'PENDING',
+        hashTransacao: randomHash
       };
       setAudits([newAudit, ...audits]);
     } finally {
@@ -139,10 +181,10 @@ export default function Auditor() {
   const handleShare = async (tx: AuditTransaction) => {
     try {
       await Share.share({
-        message: `Relativistic Time Audit - Chronos DTN\nTX Hash: ${tx.hash_transacao}\nCredits: ${tx.vl_creditos.toFixed(2)} CRS\nRelativistic Drift: +${tx.desvio_microssegundos} μs\nLTC (Lunar): ${tx.tm_lunar_bruto}\nUTC (Earth): ${tx.tm_terra_corrigido}`,
+        message: `Auditoria Temporal Relativística - Chronos DTN\nTX Hash: ${tx.hashTransacao}\nCréditos: ${tx.valorCreditos.toFixed(2)} CRS\nDesvio Relativístico: +${tx.desvioMicrossegundos} μs\nLTC (Lunar): ${tx.tempoLunarBruto}\nUTC (Terra): ${tx.tempoTerraCorrigido}`,
       });
     } catch (error) {
-      setGlobalError('Could not share audit details');
+      setGlobalError('Não foi possível compartilhar os detalhes da auditoria');
     }
   };
 
@@ -160,10 +202,10 @@ export default function Auditor() {
       <SpaceCard borderAccent="purple" style={styles.infoCard}>
         <View style={styles.infoTitleRow}>
           <AlertCircle color="#8A57FF" size={18} style={{ marginRight: 6 }} />
-          <Text style={styles.infoTitle}>Relativistic Compensation (Einstein's Relativity)</Text>
+          <Text style={styles.infoTitle}>Compensação Relativística (Relatividade de Einstein)</Text>
         </View>
         <Text style={styles.infoBody}>
-          Clocks in Lunar gravity (LTC) tick faster than Earth clocks (UTC) by approximately <Text style={styles.highlightText}>56.02 microseconds per day</Text>. This console measures raw transactional timestamps and audits relativistic drift (<Text style={styles.highlightCyan}>Δμs</Text>) to maintain ledger consensus.
+          Relógios sob gravidade lunar (LTC) correm mais rápido do que na Terra (UTC) em cerca de <Text style={styles.highlightText}>56,02 microssegundos por dia</Text>. Este console mede carimbos de data/hora brutos e audita o desvio relativístico (<Text style={styles.highlightCyan}>Δμs</Text>) para manter o consenso.
         </Text>
       </SpaceCard>
 
@@ -174,24 +216,24 @@ export default function Auditor() {
             style={[styles.filterBtn, filter === 'ALL' && styles.filterBtnActive]} 
             onPress={() => setFilter('ALL')}
           >
-            <Text style={[styles.filterBtnText, filter === 'ALL' && styles.filterBtnTextActive]}>All</Text>
+            <Text style={[styles.filterBtnText, filter === 'ALL' && styles.filterBtnTextActive]}>Todos</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.filterBtn, filter === 'AUDITED' && styles.filterBtnActive]} 
             onPress={() => setFilter('AUDITED')}
           >
-            <Text style={[styles.filterBtnText, filter === 'AUDITED' && styles.filterBtnTextActive]}>Audited</Text>
+            <Text style={[styles.filterBtnText, filter === 'AUDITED' && styles.filterBtnTextActive]}>Auditados</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.filterBtn, filter === 'PENDING' && styles.filterBtnActive]} 
             onPress={() => setFilter('PENDING')}
           >
-            <Text style={[styles.filterBtnText, filter === 'PENDING' && styles.filterBtnTextActive]}>Pending</Text>
+            <Text style={[styles.filterBtnText, filter === 'PENDING' && styles.filterBtnTextActive]}>Pendentes</Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity style={styles.createBtn} onPress={simulateNewAudit} disabled={loading}>
           <Plus color="#00F2FE" size={16} style={{ marginRight: 4 }} />
-          <Text style={styles.createBtnText}>Simulate</Text>
+          <Text style={styles.createBtnText}>Simular</Text>
         </TouchableOpacity>
       </View>
 
@@ -203,7 +245,7 @@ export default function Auditor() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <History color="#64748B" size={48} />
-            <Text style={styles.emptyText}>No audited transactions found.</Text>
+            <Text style={styles.emptyText}>Nenhuma transação auditada encontrada.</Text>
           </View>
         }
         renderItem={({ item }) => {
@@ -212,36 +254,36 @@ export default function Auditor() {
             <SpaceCard borderAccent={isAudited ? 'green' : 'amber'} style={styles.auditCard}>
               <View style={styles.auditHeader}>
                 <View style={styles.opGroup}>
-                  <Text style={styles.opLabel}>Operator #{item.operadora_id}</Text>
-                  <Text style={styles.creditsText}>{item.vl_creditos.toLocaleString(undefined, { minimumFractionDigits: 2 })} <Text style={styles.crLabel}>CRS</Text></Text>
+                  <Text style={styles.opLabel}>Operador #{item.idOperador}</Text>
+                  <Text style={styles.creditsText}>{item.valorCreditos.toLocaleString(undefined, { minimumFractionDigits: 2 })} <Text style={styles.crLabel}>CRS</Text></Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: isAudited ? '#05C18020' : '#FFB30020' }]}>
                   <ShieldCheck color={isAudited ? '#00F5A0' : '#FFB300'} size={14} style={{ marginRight: 4 }} />
-                  <Text style={[styles.statusText, { color: isAudited ? '#00F5A0' : '#FFB300' }]}>{item.status}</Text>
+                  <Text style={[styles.statusText, { color: isAudited ? '#00F5A0' : '#FFB300' }]}>{isAudited ? 'AUDITADO' : 'PENDENTE'}</Text>
                 </View>
               </View>
 
               <View style={styles.driftMetrics}>
                 <View style={styles.driftColumn}>
-                  <Text style={styles.driftLabel}>Lunar Local (LTC)</Text>
-                  <Text style={styles.driftTimeText}>{item.tm_lunar_bruto}</Text>
+                  <Text style={styles.driftLabel}>Local Lunar (LTC)</Text>
+                  <Text style={styles.driftTimeText}>{item.tempoLunarBruto}</Text>
                 </View>
                 <View style={styles.driftArrow}>
                   <Text style={styles.driftArrowText}>→</Text>
                 </View>
                 <View style={styles.driftColumn}>
-                  <Text style={styles.driftLabel}>Earth Corrected (UTC)</Text>
-                  <Text style={styles.driftTimeText}>{item.tm_terra_corrigido}</Text>
+                  <Text style={styles.driftLabel}>Corrigido Terra (UTC)</Text>
+                  <Text style={styles.driftTimeText}>{item.tempoTerraCorrigido}</Text>
                 </View>
               </View>
 
               <View style={styles.driftResultRow}>
-                <Text style={styles.resultLabel}>Relativistic Drift (Δ):</Text>
-                <Text style={styles.resultValue}>+{item.desvio_microssegundos} μs</Text>
+                <Text style={styles.resultLabel}>Desvio Relativístico (Δ):</Text>
+                <Text style={styles.resultValue}>+{item.desvioMicrossegundos} μs</Text>
               </View>
 
               <View style={styles.hashFooter}>
-                <Text style={styles.hashText} numberOfLines={1}>SHA: {item.hash_transacao}</Text>
+                <Text style={styles.hashText} numberOfLines={1}>SHA: {item.hashTransacao}</Text>
                 <TouchableOpacity onPress={() => handleShare(item)} style={styles.shareIcon}>
                   <Share2 color="#94A3B8" size={14} />
                 </TouchableOpacity>

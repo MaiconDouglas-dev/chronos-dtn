@@ -7,10 +7,10 @@ namespace ChronosDTN.Application.Interfaces
 {
     public interface IChronosDtnDbContext
     {
-        DbSet<Operator> Operators { get; }
-        DbSet<SatelliteNode> SatelliteNodes { get; }
-        DbSet<DtnPackage> DtnPackages { get; }
-        DbSet<AuditedTransaction> AuditedTransactions { get; }
+        DbSet<Operador> Operadores { get; }
+        DbSet<NoSatelite> NosSatelites { get; }
+        DbSet<PacoteDtn> PacotesDtn { get; }
+        DbSet<TransacaoAuditada> TransacoesAuditadas { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

@@ -92,8 +92,8 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = string.Empty; // Serve Swagger UI at root
 });
 
-// Custom global exception handling middleware
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+// Custom global exception handling middleware in Portuguese
+app.UseMiddleware<MiddlewareTratamentoErros>();
 
 app.UseCors("AllowAll");
 
@@ -114,7 +114,7 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
+        logger.LogError(ex, "Ocorreu um erro ao semear o banco de dados.");
     }
 }
 

@@ -9,3 +9,4 @@ C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN
 C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Domain\obj\Debug\net8.0\refint\ChronosDTN.Domain.dll
 C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Domain\obj\Debug\net8.0\ChronosDTN.Domain.pdb
 C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Domain\obj\Debug\net8.0\ref\ChronosDTN.Domain.dll
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.Domain\obj\Debug\net8.0\ChronosDTN.Domain.sourcelink.json

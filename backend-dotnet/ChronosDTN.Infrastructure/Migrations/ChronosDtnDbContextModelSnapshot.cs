@@ -16,30 +16,145 @@ namespace ChronosDTN.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.8");
 
-            modelBuilder.Entity("ChronosDTN.Domain.Entities.AuditedTransaction", b =>
+            modelBuilder.Entity("ChronosDTN.Domain.Entities.NoSatelite", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
                         .HasColumnName("ID");
 
-                    b.Property<string>("Action")
+                    b.Property<long>("AtualizadoEmUs")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ATUALIZADO_EM");
+
+                    b.Property<long>("CriadoEmUs")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("CRIADO_EM");
+
+                    b.Property<string>("EnderecoIp")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("ENDERECO_IP");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("NOME");
+
+                    b.Property<int>("Porta")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("PORTA");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("STATUS");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("NOS_SATELLITES", (string)null);
+                });
+
+            modelBuilder.Entity("ChronosDTN.Domain.Entities.Operador", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ID");
+
+                    b.Property<string>("CodigoRegistro")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("CODIGO");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("NOME");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("OPERADORAS_AERO", (string)null);
+                });
+
+            modelBuilder.Entity("ChronosDTN.Domain.Entities.PacoteDtn", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ID");
+
+                    b.Property<long>("NoDestinoId")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("NO_DESTINO_ID");
+
+                    b.Property<long>("NoOrigemId")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("NO_ORIGEM_ID");
+
+                    b.Property<long>("OperadorId")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("OPERADORA_ID");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("PAYLOAD");
+
+                    b.Property<string>("StatusTransmissao")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("STATUS");
+
+                    b.Property<long>("Tamanho")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("TAMANHO");
+
+                    b.Property<long>("TempoCriacaoUs")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("DATA_CRIACAO");
+
+                    b.Property<long>("TempoExpiracaoUs")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("DATA_EXPIRACAO");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OperadorId");
+
+                    b.ToTable("FILA_PACOTES_DTN", (string)null);
+                });
+
+            modelBuilder.Entity("ChronosDTN.Domain.Entities.TransacaoAuditada", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ID");
+
+                    b.Property<string>("Acao")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("TEXT")
                         .HasColumnName("ACAO");
 
-                    b.Property<string>("Details")
+                    b.Property<string>("Detalhes")
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT")
                         .HasColumnName("DETALHES");
 
-                    b.Property<long>("OperatorId")
+                    b.Property<long>("OperadorId")
                         .HasColumnType("INTEGER")
                         .HasColumnName("OPERADORA_ID");
 
-                    b.Property<long>("PackageId")
+                    b.Property<long>("PacoteId")
                         .HasColumnType("INTEGER")
                         .HasColumnName("PACOTE_ID");
 
@@ -52,135 +167,20 @@ namespace ChronosDTN.Infrastructure.Migrations
                     b.ToTable("TRANSACOES_AUDITADAS", (string)null);
                 });
 
-            modelBuilder.Entity("ChronosDTN.Domain.Entities.DtnPackage", b =>
+            modelBuilder.Entity("ChronosDTN.Domain.Entities.PacoteDtn", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("ID");
-
-                    b.Property<long>("CreationTimeUs")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("DATA_CRIACAO");
-
-                    b.Property<long>("DestinationNodeId")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("NO_DESTINO_ID");
-
-                    b.Property<long>("ExpirationTimeUs")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("DATA_EXPIRACAO");
-
-                    b.Property<long>("OperatorId")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("OPERADORA_ID");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("TEXT")
-                        .HasColumnName("PAYLOAD");
-
-                    b.Property<long>("Size")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("TAMANHO");
-
-                    b.Property<long>("SourceNodeId")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("NO_ORIGEM_ID");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("STATUS");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OperatorId");
-
-                    b.ToTable("FILA_PACOTES_DTN", (string)null);
-                });
-
-            modelBuilder.Entity("ChronosDTN.Domain.Entities.Operator", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("ID");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("CODIGO");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("NOME");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("OPERADORAS_AERO", (string)null);
-                });
-
-            modelBuilder.Entity("ChronosDTN.Domain.Entities.SatelliteNode", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("ID");
-
-                    b.Property<long>("CreatedAtUs")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("CRIADO_EM");
-
-                    b.Property<string>("IpAddress")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("ENDERECO_IP");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("NOME");
-
-                    b.Property<int>("Port")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("PORTA");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("STATUS");
-
-                    b.Property<long>("UpdatedAtUs")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("ATUALIZADO_EM");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("NOS_SATELLITES", (string)null);
-                });
-
-            modelBuilder.Entity("ChronosDTN.Domain.Entities.DtnPackage", b =>
-                {
-                    b.HasOne("ChronosDTN.Domain.Entities.Operator", "Operator")
-                        .WithMany("DtnPackages")
-                        .HasForeignKey("OperatorId")
+                    b.HasOne("ChronosDTN.Domain.Entities.Operador", "Operador")
+                        .WithMany("PacotesDtn")
+                        .HasForeignKey("OperadorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Operator");
+                    b.Navigation("Operador");
                 });
 
-            modelBuilder.Entity("ChronosDTN.Domain.Entities.Operator", b =>
+            modelBuilder.Entity("ChronosDTN.Domain.Entities.Operador", b =>
                 {
-                    b.Navigation("DtnPackages");
+                    b.Navigation("PacotesDtn");
                 });
 #pragma warning restore 612, 618
         }

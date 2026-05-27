@@ -11,72 +11,72 @@ namespace ChronosDTN.Infrastructure.Data
         {
         }
 
-        public DbSet<Operator> Operators => Set<Operator>();
-        public DbSet<SatelliteNode> SatelliteNodes => Set<SatelliteNode>();
-        public DbSet<DtnPackage> DtnPackages => Set<DtnPackage>();
-        public DbSet<AuditedTransaction> AuditedTransactions => Set<AuditedTransaction>();
+        public DbSet<Operador> Operadores => Set<Operador>();
+        public DbSet<NoSatelite> NosSatelites => Set<NoSatelite>();
+        public DbSet<PacoteDtn> PacotesDtn => Set<PacoteDtn>();
+        public DbSet<TransacaoAuditada> TransacoesAuditadas => Set<TransacaoAuditada>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Operators (OPERADORAS_AERO)
-            modelBuilder.Entity<Operator>(entity =>
+            // Operador (OPERADORAS_AERO)
+            modelBuilder.Entity<Operador>(entity =>
             {
                 entity.ToTable("OPERADORAS_AERO");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasColumnName("ID");
-                entity.Property(e => e.Name).HasColumnName("NOME").IsRequired().HasMaxLength(150);
-                entity.Property(e => e.Code).HasColumnName("CODIGO").IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Nome).HasColumnName("NOME").IsRequired().HasMaxLength(150);
+                entity.Property(e => e.CodigoRegistro).HasColumnName("CODIGO").IsRequired().HasMaxLength(50);
             });
 
-            // SatelliteNodes (NOS_SATELLITES)
-            modelBuilder.Entity<SatelliteNode>(entity =>
+            // NoSatelite (NOS_SATELLITES)
+            modelBuilder.Entity<NoSatelite>(entity =>
             {
                 entity.ToTable("NOS_SATELLITES");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasColumnName("ID");
-                entity.Property(e => e.Name).HasColumnName("NOME").IsRequired().HasMaxLength(150);
-                entity.Property(e => e.IpAddress).HasColumnName("ENDERECO_IP").IsRequired().HasMaxLength(50);
-                entity.Property(e => e.Port).HasColumnName("PORTA").IsRequired();
+                entity.Property(e => e.Nome).HasColumnName("NOME").IsRequired().HasMaxLength(150);
+                entity.Property(e => e.EnderecoIp).HasColumnName("ENDERECO_IP").IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Porta).HasColumnName("PORTA").IsRequired();
                 entity.Property(e => e.Status).HasColumnName("STATUS").IsRequired().HasMaxLength(50);
-                entity.Property(e => e.CreatedAtUs).HasColumnName("CRIADO_EM").IsRequired();
-                entity.Property(e => e.UpdatedAtUs).HasColumnName("ATUALIZADO_EM").IsRequired();
+                entity.Property(e => e.CriadoEmUs).HasColumnName("CRIADO_EM").IsRequired();
+                entity.Property(e => e.AtualizadoEmUs).HasColumnName("ATUALIZADO_EM").IsRequired();
             });
 
-            // DtnPackages (FILA_PACOTES_DTN)
-            modelBuilder.Entity<DtnPackage>(entity =>
+            // PacoteDtn (FILA_PACOTES_DTN)
+            modelBuilder.Entity<PacoteDtn>(entity =>
             {
                 entity.ToTable("FILA_PACOTES_DTN");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasColumnName("ID");
                 entity.Property(e => e.Payload).HasColumnName("PAYLOAD").IsRequired();
-                entity.Property(e => e.SourceNodeId).HasColumnName("NO_ORIGEM_ID").IsRequired();
-                entity.Property(e => e.DestinationNodeId).HasColumnName("NO_DESTINO_ID").IsRequired();
-                entity.Property(e => e.OperatorId).HasColumnName("OPERADORA_ID").IsRequired();
-                entity.Property(e => e.Size).HasColumnName("TAMANHO").IsRequired();
-                entity.Property(e => e.CreationTimeUs).HasColumnName("DATA_CRIACAO").IsRequired();
-                entity.Property(e => e.ExpirationTimeUs).HasColumnName("DATA_EXPIRACAO").IsRequired();
-                entity.Property(e => e.Status).HasColumnName("STATUS").IsRequired().HasMaxLength(50);
+                entity.Property(e => e.NoOrigemId).HasColumnName("NO_ORIGEM_ID").IsRequired();
+                entity.Property(e => e.NoDestinoId).HasColumnName("NO_DESTINO_ID").IsRequired();
+                entity.Property(e => e.OperadorId).HasColumnName("OPERADORA_ID").IsRequired();
+                entity.Property(e => e.Tamanho).HasColumnName("TAMANHO").IsRequired();
+                entity.Property(e => e.TempoCriacaoUs).HasColumnName("DATA_CRIACAO").IsRequired();
+                entity.Property(e => e.TempoExpiracaoUs).HasColumnName("DATA_EXPIRACAO").IsRequired();
+                entity.Property(e => e.StatusTransmissao).HasColumnName("STATUS").IsRequired().HasMaxLength(50);
 
-                // 1:N Relationship between Operator and DtnPackage
-                entity.HasOne(d => d.Operator)
-                    .WithMany(o => o.DtnPackages)
-                    .HasForeignKey(d => d.OperatorId)
+                // Relacionamento 1:N entre Operador e PacoteDtn
+                entity.HasOne(d => d.Operador)
+                    .WithMany(o => o.PacotesDtn)
+                    .HasForeignKey(d => d.OperadorId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // AuditedTransactions (TRANSACOES_AUDITADAS)
-            modelBuilder.Entity<AuditedTransaction>(entity =>
+            // TransacaoAuditada (TRANSACOES_AUDITADAS)
+            modelBuilder.Entity<TransacaoAuditada>(entity =>
             {
                 entity.ToTable("TRANSACOES_AUDITADAS");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasColumnName("ID");
-                entity.Property(e => e.PackageId).HasColumnName("PACOTE_ID").IsRequired();
-                entity.Property(e => e.OperatorId).HasColumnName("OPERADORA_ID").IsRequired();
-                entity.Property(e => e.Action).HasColumnName("ACAO").IsRequired().HasMaxLength(50);
+                entity.Property(e => e.PacoteId).HasColumnName("PACOTE_ID").IsRequired();
+                entity.Property(e => e.OperadorId).HasColumnName("OPERADORA_ID").IsRequired();
+                entity.Property(e => e.Acao).HasColumnName("ACAO").IsRequired().HasMaxLength(50);
                 entity.Property(e => e.TimestampUs).HasColumnName("DATA_HORA").IsRequired();
-                entity.Property(e => e.Details).HasColumnName("DETALHES").HasMaxLength(1000);
+                entity.Property(e => e.Detalhes).HasColumnName("DETALHES").HasMaxLength(1000);
             });
         }
     }

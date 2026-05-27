@@ -5,19 +5,19 @@ import { api } from '../../services/api';
 import SpaceBackground from '../../components/SpaceBackground';
 import SpaceCard from '../../components/SpaceCard';
 import Header from '../../components/Header';
-import { RefreshCw, Radio, ShieldAlert, Cpu, Database, Compass, ArrowUpRight } from 'lucide-react-native';
+import { RefreshCw, Radio, ShieldAlert, Cpu, Database, Compass } from 'lucide-react-native';
 
 interface Node {
   id: number;
   nome: string;
-  latency_terra_ms: number;
-  latency_lua_ms: number;
+  latenciaTerraMs: number;
+  latenciaLuaMs: number;
   status: string;
-  throughput_kbps: number;
+  throughputKbps: number;
 }
 
 export default function Dashboard() {
-  const { jwtToken, setGlobalError } = useApp();
+  const { tokenJwt, setGlobalError } = useApp();
   const [nodes, setNodes] = useState<Node[]>([]);
   const [dtnCount, setDtnCount] = useState(0);
   const [auditCount, setAuditCount] = useState(0);
@@ -26,47 +26,73 @@ export default function Dashboard() {
 
   // Mock data fallbacks
   const mockNodes: Node[] = [
-    { id: 1, nome: 'LunaPath-1 (Orbital Relay)', latency_terra_ms: 1320, latency_lua_ms: 8, status: 'ONLINE', throughput_kbps: 25600 },
-    { id: 2, nome: 'LOP-G Gateway Comms', latency_terra_ms: 1280, latency_lua_ms: 5, status: 'ONLINE', throughput_kbps: 102400 },
-    { id: 3, nome: 'Shackleton Surface Base', latency_terra_ms: 1410, latency_lua_ms: 2, status: 'DEGRADED', throughput_kbps: 512 },
-    { id: 4, nome: 'LunaRelay-4 (Far Side)', latency_terra_ms: 1550, latency_lua_ms: 15, status: 'ONLINE', throughput_kbps: 4096 },
+    { id: 1, nome: 'LunaPath-1 (Relay Orbital)', latenciaTerraMs: 1320, latenciaLuaMs: 8, status: 'ONLINE', throughputKbps: 25600 },
+    { id: 2, nome: 'LOP-G Gateway Comms', latenciaTerraMs: 1280, latenciaLuaMs: 5, status: 'ONLINE', throughputKbps: 102400 },
+    { id: 3, nome: 'Shackleton Surface Base', latenciaTerraMs: 1410, latenciaLuaMs: 2, status: 'DEGRADED', throughputKbps: 512 },
+    { id: 4, nome: 'LunaRelay-4 (Lado Oculto)', latenciaTerraMs: 1550, latenciaLuaMs: 15, status: 'ONLINE', throughputKbps: 4096 },
   ];
+
+  const normalizeNode = (data: any): Node => {
+    return {
+      id: data.id,
+      nome: data.nome || data.name || '',
+      latenciaTerraMs: data.latenciaTerraMs ?? data.latencyTerraMs ?? data.latency_terra_ms ?? 0,
+      latenciaLuaMs: data.latenciaLuaMs ?? data.latencyLuaMs ?? data.latency_lua_ms ?? 0,
+      status: data.status || 'OFFLINE',
+      throughputKbps: data.throughputKbps ?? data.throughput_kbps ?? 0,
+    };
+  };
+
+  const executeSequential = async (endpoints: string[]) => {
+    for (const endpoint of endpoints) {
+      try {
+        const res = await api.get(endpoint);
+        if (res && res.data) {
+          return res;
+        }
+      } catch (err) {
+        // continue trying next
+      }
+    }
+    throw new Error('Todos os endpoints falharam');
+  };
 
   const fetchData = async () => {
     setRefreshing(true);
     try {
-      // Attempt to load from real backend APIs
+      // Attempt to load from real backend APIs sequentially
       const [nodesRes, bundlesRes, auditsRes] = await Promise.all([
-        api.get('/nodes').catch(() => null),
-        api.get('/dtn/queue').catch(() => null),
-        api.get('/audits').catch(() => null),
+        executeSequential(['/nos', '/nosatelite', '/nodes']).catch(() => null),
+        executeSequential(['/pacotes', '/filadtn', '/dtn/queue']).catch(() => null),
+        executeSequential(['/transacoes', '/transactions', '/audits']).catch(() => null),
       ]);
 
       if (nodesRes && nodesRes.data) {
-        setNodes(nodesRes.data);
+        const rawList = Array.isArray(nodesRes.data) ? nodesRes.data : [];
+        setNodes(rawList.map(normalizeNode));
         setIsSimulated(false);
       } else {
-        // Fallback
         setNodes(mockNodes);
         setIsSimulated(true);
       }
 
       if (bundlesRes && bundlesRes.data) {
-        setDtnCount(bundlesRes.data.length);
+        const rawList = Array.isArray(bundlesRes.data) ? bundlesRes.data : [];
+        setDtnCount(rawList.length);
       } else {
-        setDtnCount(2); // Mock initial state
+        setDtnCount(3); // Mock initial state
       }
 
       if (auditsRes && auditsRes.data) {
-        setAuditCount(auditsRes.data.length);
+        const rawList = Array.isArray(auditsRes.data) ? auditsRes.data : [];
+        setAuditCount(rawList.length);
       } else {
-        setAuditCount(2); // Mock initial state
+        setAuditCount(4); // Mock initial state
       }
     } catch (err) {
-      // Fallback in case of general failure
       setNodes(mockNodes);
-      setDtnCount(2);
-      setAuditCount(2);
+      setDtnCount(3);
+      setAuditCount(4);
       setIsSimulated(true);
     } finally {
       setRefreshing(false);
@@ -79,11 +105,11 @@ export default function Dashboard() {
 
   const getSignalStrength = () => {
     const onlineCount = nodes.filter(n => n.status === 'ONLINE').length;
-    if (onlineCount === 0) return { pct: 0, text: 'DISCONNECTED', color: '#FF007A' };
-    if (onlineCount === 1) return { pct: 25, text: 'CRITICAL', color: '#FF007A' };
-    if (onlineCount === 2) return { pct: 50, text: 'WEAK', color: '#FFB300' };
-    if (onlineCount === 3) return { pct: 75, text: 'STABLE', color: '#00F2FE' };
-    return { pct: 98, text: 'OPTIMAL', color: '#00F5A0' };
+    if (onlineCount === 0) return { pct: 0, text: 'DESCONECTADO', color: '#FF007A' };
+    if (onlineCount === 1) return { pct: 25, text: 'CRÍTICO', color: '#FF007A' };
+    if (onlineCount === 2) return { pct: 50, text: 'FRACO', color: '#FFB300' };
+    if (onlineCount === 3) return { pct: 75, text: 'ESTÁVEL', color: '#00F2FE' };
+    return { pct: 98, text: 'EXCELENTE', color: '#00F5A0' };
   };
 
   const signal = getSignalStrength();
@@ -96,7 +122,7 @@ export default function Dashboard() {
       {isSimulated && (
         <View style={styles.simulationBanner}>
           <ShieldAlert color="#FFB300" size={16} style={{ marginRight: 6 }} />
-          <Text style={styles.simulationText}>Simulated Telemetry Mode (Offline Local Cache)</Text>
+          <Text style={styles.simulationText}>Modo de Telemetria Simulada (Cache Local Offline)</Text>
         </View>
       )}
 
@@ -105,7 +131,7 @@ export default function Dashboard() {
         <SpaceCard style={styles.metricCard} borderAccent="cyan">
           <View style={styles.cardHeader}>
             <Radio color="#00F2FE" size={20} />
-            <Text style={styles.metricTitle}>Signal</Text>
+            <Text style={styles.metricTitle}>Sinal</Text>
           </View>
           <Text style={[styles.metricValue, { color: signal.color }]}>{signal.pct}%</Text>
           <Text style={styles.metricSub}>{signal.text}</Text>
@@ -114,10 +140,10 @@ export default function Dashboard() {
         <SpaceCard style={styles.metricCard} borderAccent="purple">
           <View style={styles.cardHeader}>
             <Compass color="#8A57FF" size={20} />
-            <Text style={styles.metricTitle}>Rel. Drift</Text>
+            <Text style={styles.metricTitle}>Desvio Rel.</Text>
           </View>
           <Text style={styles.metricValue}>+56.2</Text>
-          <Text style={styles.metricSub}>μs/day (LTC vs UTC)</Text>
+          <Text style={styles.metricSub}>μs/dia (LTC vs UTC)</Text>
         </SpaceCard>
       </View>
 
@@ -126,7 +152,7 @@ export default function Dashboard() {
         <View style={styles.bufferHeader}>
           <View style={styles.bufferTitleContainer}>
             <Database color="#FFB300" size={20} style={{ marginRight: 8 }} />
-            <Text style={styles.bufferMainTitle}>DTN Interplanetary Buffer</Text>
+            <Text style={styles.bufferMainTitle}>Buffer Interplanetário DTN</Text>
           </View>
           <TouchableOpacity onPress={fetchData} disabled={refreshing}>
             {refreshing ? (
@@ -139,53 +165,54 @@ export default function Dashboard() {
         <View style={styles.bufferBody}>
           <View style={styles.bufferInfoBlock}>
             <Text style={styles.bufferValText}>{dtnCount}</Text>
-            <Text style={styles.bufferLabelText}>Bundles Retained</Text>
+            <Text style={styles.bufferLabelText}>Pacotes Retidos</Text>
           </View>
           <View style={styles.bufferDivider} />
           <View style={styles.bufferInfoBlock}>
             <Text style={styles.bufferValText}>{auditCount}</Text>
-            <Text style={styles.bufferLabelText}>Audited Credits</Text>
+            <Text style={styles.bufferLabelText}>Transações Auditadas</Text>
           </View>
         </View>
         <View style={styles.progressContainer}>
           <View style={styles.progressBarBg}>
             <View style={[styles.progressBarFill, { width: `${Math.min((dtnCount / 20) * 100, 100)}%` }]} />
           </View>
-          <Text style={styles.progressLabel}>Buffer capacity: {dtnCount}/20 packets</Text>
+          <Text style={styles.progressLabel}>Capacidade do buffer: {dtnCount}/20 pacotes</Text>
         </View>
       </SpaceCard>
 
       {/* Satellite Connectivity Nodes list */}
       <View style={styles.sectionHeader}>
         <Cpu color="#94A3B8" size={18} style={{ marginRight: 6 }} />
-        <Text style={styles.sectionTitle}>Connectivity Relays ({nodes.length})</Text>
+        <Text style={styles.sectionTitle}>Relés de Conectividade ({nodes.length})</Text>
       </View>
 
       {nodes.map((node) => {
         const isOnline = node.status === 'ONLINE';
         const isDegraded = node.status === 'DEGRADED';
         const statusAccent = isOnline ? 'green' : isDegraded ? 'amber' : 'magenta';
+        const statusLabel = isOnline ? 'ONLINE' : isDegraded ? 'DEGRADADO' : 'OFFLINE';
 
         return (
           <SpaceCard key={node.id} borderAccent={statusAccent} style={styles.nodeItem}>
             <View style={styles.nodeMainRow}>
               <View>
                 <Text style={styles.nodeName}>{node.nome}</Text>
-                <Text style={styles.nodeThroughput}>{(node.throughput_kbps / 1024).toFixed(1)} Mbps Max Rate</Text>
+                <Text style={styles.nodeThroughput}>{(node.throughputKbps / 1024).toFixed(1)} Mbps Taxa Máx</Text>
               </View>
               <View style={[styles.statusBadge, { backgroundColor: isOnline ? '#05C18020' : isDegraded ? '#FFB30020' : '#FF007A20' }]}>
-                <Text style={[styles.statusText, { color: isOnline ? '#00F5A0' : isDegraded ? '#FFB300' : '#FF007A' }]}>{node.status}</Text>
+                <Text style={[styles.statusText, { color: isOnline ? '#00F5A0' : isDegraded ? '#FFB300' : '#FF007A' }]}>{statusLabel}</Text>
               </View>
             </View>
             <View style={styles.latencySplit}>
               <View style={styles.latencyItem}>
-                <Text style={styles.latencyLabel}>Earth RT Delay</Text>
-                <Text style={styles.latencyValue}>{node.latency_terra_ms} ms</Text>
+                <Text style={styles.latencyLabel}>Atraso RTT Terra</Text>
+                <Text style={styles.latencyValue}>{node.latenciaTerraMs} ms</Text>
               </View>
               <View style={styles.verticalSplitLine} />
               <View style={styles.latencyItem}>
-                <Text style={styles.latencyLabel}>Lunar Orbit Delay</Text>
-                <Text style={styles.latencyValue}>{node.latency_lua_ms} ms</Text>
+                <Text style={styles.latencyLabel}>Atraso RTT Órbita Lua</Text>
+                <Text style={styles.latencyValue}>{node.latenciaLuaMs} ms</Text>
               </View>
             </View>
           </SpaceCard>

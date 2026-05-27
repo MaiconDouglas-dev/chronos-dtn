@@ -5,14 +5,14 @@ import { useRouter } from 'expo-router';
 import { Wifi, WifiOff, User } from 'lucide-react-native';
 
 export const Header: React.FC = () => {
-  const { jwtToken, operatorName, serverUrl } = useApp();
+  const { tokenJwt, nomeOperador, urlServidor } = useApp();
   const router = useRouter();
 
   return (
     <View style={styles.container}>
       <View>
         <Text style={styles.title}>CHRONOS DTN</Text>
-        <Text style={styles.subtitle}>Relativistic Sync Console</Text>
+        <Text style={styles.subtitle}>Console de Sincronização Relativística</Text>
       </View>
       <TouchableOpacity
         style={styles.profileBadge}
@@ -20,7 +20,7 @@ export const Header: React.FC = () => {
         onPress={() => router.push('/(tabs)/profile')}
       >
         <View style={styles.statusDotWrapper}>
-          {jwtToken ? (
+          {tokenJwt ? (
             <Wifi color="#00F5A0" size={16} />
           ) : (
             <WifiOff color="#FF007A" size={16} />
@@ -28,10 +28,10 @@ export const Header: React.FC = () => {
         </View>
         <View style={styles.operatorDetails}>
           <Text style={styles.operatorText} numberOfLines={1}>
-            {operatorName || 'Offline Mode'}
+            {nomeOperador || 'Modo Offline'}
           </Text>
           <Text style={styles.serverText} numberOfLines={1}>
-            {serverUrl ? serverUrl.replace('http://', '').replace('/api', '') : 'No Server'}
+            {urlServidor ? urlServidor.replace('http://', '').replace('/api', '') : 'Sem Servidor'}
           </Text>
         </View>
         <User color="#94A3B8" size={18} style={styles.userIcon} />

@@ -1,116 +1,116 @@
-# Chronos DTN Gateway Web API
+# API Web do Gateway Chronos DTN
 
-High-performance Spring Boot Web API for the 'Chronos DTN' system, designed for Lunar-Earth Interplanetary Financial & Network Routing.
+API Web Spring Boot de alta performance para o sistema 'Chronos DTN', projetada para Roteamento de Rede e Transações Financeiras Interplanetárias entre a Terra e a Lua.
 
-## Technologies Used
+## Tecnologias Utilizadas
 - **Java**: 21
 - **Spring Boot**: 3.2.5
-- **Spring Security**: JWT Authentication and CORS Configured
-- **Database**: H2 (In-Memory, running Postgres Compatibility Mode)
-- **HATEOAS**: Hypermedia links for Audited Transactions
-- **OpenAPI/Swagger**: API Documentation with Swagger UI
+- **Spring Security**: Autenticação baseada em JWT e configuração de CORS
+- **Banco de Dados**: H2 (Em memória, rodando no modo de compatibilidade com PostgreSQL)
+- **HATEOAS**: Links de hipermídia para recursos de Transações Auditadas
+- **OpenAPI/Swagger**: Documentação da API com interface Swagger UI
 
-## Package Structure
-- `com.chronosdtn.gateway.config`: Security, Web, and OpenAPI configurations.
-- `com.chronosdtn.gateway.controller`: Auth, SatelliteNode, DtnPackage, and AuditedTransaction controllers.
-- `com.chronosdtn.gateway.model`: JPA Entities (Operator, SatelliteNode, DtnPackage, AuditedTransaction).
-- `com.chronosdtn.gateway.repository`: Spring Data JPA Repositories.
-- `com.chronosdtn.gateway.service`: TimeAuditingService, DtnQueueService, and AuthService.
-- `com.chronosdtn.gateway.dto`: Data Transfer Objects (JWTResponse, LoginRequest, NodeRequest, etc.).
+## Estrutura de Pacotes
+- `com.chronosdtn.gateway.config`: Configurações de Segurança, Web e OpenAPI.
+- `com.chronosdtn.gateway.controller`: Controladores de Autenticação (`ControleAutenticacao`), Nós Satélites (`ControleNoSatelite`), Pacotes DTN (`ControlePacoteDtn`) e Transações Auditadas (`ControleTransacaoAuditada`).
+- `com.chronosdtn.gateway.model`: Entidades JPA (`Operador`, `NoSatelite`, `PacoteDtn`, `TransacaoAuditada`).
+- `com.chronosdtn.gateway.repository`: Repositórios Spring Data JPA.
+- `com.chronosdtn.gateway.service`: Serviços `ServicoAuditoriaTempo`, `ServicoFilaDtn` e `ServicoAutenticacao`.
+- `com.chronosdtn.gateway.dto`: Objetos de Transferência de Dados (`RespostaJwt`, `RequisicaoLogin`, `RequisicaoNo`, `RequisicaoPacoteDtn`, `RequisicaoTransacao`).
 
-## Relativistic Time Correction Formula
-To compensate for Coordinated Lunar Time (LTC) running faster by **56.02 microseconds per day** relative to Earth Time (UTC/TAI), the `TimeAuditingService` implements the linear correction:
+## Fórmula de Correção de Tempo Relativístico
+Para compensar o fato de o Tempo Lunar Coordenado (LTC) passar mais rápido em exatamente **56.02 microssegundos por dia** em relação ao Tempo da Terra (UTC/TAI), o `ServicoAuditoriaTempo` implementa a seguinte fórmula de correção linear:
 
-- **Reference Epoch**: `1779900000000000` microseconds
-- **Formula**:
+- **Época de Referência**: `1779900000000000` microssegundos
+- **Fórmula**:
   ```java
-  long delta_t = lunarRaw - referenceEpoch;
-  long earthCorrected = lunarRaw - (long)(delta_t * (56.02e-6 / 86400.0));
-  long drift = lunarRaw - earthCorrected;
+  long delta_t = tempoLunarBruto - EPOCA_REFERENCIA;
+  long tempoTerraCorrigido = tempoLunarBruto - (long)(delta_t * (56.02e-6 / 86400.0));
+  long desvio = tempoLunarBruto - tempoTerraCorrigido;
   ```
 
 ---
 
-## API Documentation (Endpoints)
+## Documentação da API (Endpoints)
 
-### 1. Authentication
-* **POST `/api/auth/login`**: Authenticate operator.
-  * **Payload**:
+### 1. Autenticação
+* **POST `/api/autenticacao/login`**: Autentica o operador do gateway.
+  * **Corpo da Requisição**:
     ```json
     {
       "username": "operator",
       "password": "password"
     }
     ```
-  * **Response**: JWT Token.
+  * **Resposta**: Token JWT em formato JSON.
 
-### 2. Satellite Nodes (CRUD)
-* **GET `/api/nodes`**: Retrieve all nodes.
-* **GET `/api/nodes/{id}`**: Retrieve node by ID.
-* **POST `/api/nodes`**: Create new node.
-  * **Payload**:
+### 2. Nós Satélites (CRUD)
+* **GET `/api/nos`**: Recupera todos os nós satélites.
+* **GET `/api/nos/{id}`**: Recupera um nó específico por ID.
+* **POST `/api/nos`**: Cria um novo nó satélite.
+  * **Corpo da Requisição**:
     ```json
     {
       "nome": "LunaRelay-5",
-      "latencyTerraMs": 1300,
-      "latencyLuaMs": 8,
+      "latenciaTerraMs": 1300,
+      "latenciaLuaMs": 8,
       "status": "ONLINE",
-      "throughputKbps": 51200
+      "vazaoKbps": 51200
     }
     ```
-* **PUT `/api/nodes/{id}`**: Update node.
-* **DELETE `/api/nodes/{id}`**: Delete node.
+* **PUT `/api/nos/{id}`**: Atualiza os dados de um nó satélite existente.
+* **DELETE `/api/nos/{id}`**: Remove um nó satélite por ID.
 
-### 3. DTN Queue
-* **GET `/api/packages`**: List all packets in the queue.
-* **POST `/api/packages`**: Queue a new packet.
-  * **Payload**:
+### 3. Fila de Pacotes DTN
+* **GET `/api/pacotes`**: Lista todos os pacotes atualmente na fila de retenção DTN.
+* **POST `/api/pacotes`**: Adiciona um novo pacote na fila DTN.
+  * **Corpo da Requisição**:
     ```json
     {
       "operadoraId": 1,
-      "pacoteMetadata": "{\"bundle_id\":\"dtn://selene.luna/trans-003\",\"priority\":\"HIGH\"}",
+      "metadataPacote": "{\"bundle_id\":\"dtn://selene.luna/trans-003\",\"priority\":\"HIGH\"}",
       "tamanhoKb": 25.40,
       "statusTransmissao": "QUEUED",
-      "createdAt": 1779900000000000
+      "criadoEmUs": 1779900000000000
     }
     ```
-* **PATCH `/api/packages/{id}/status`**: Update packet status.
-  * **Parameters**: `status` (String), `retries` (Integer, optional).
-  * **Example**: `/api/packages/1/status?status=DELIVERED&retries=0`
+* **PATCH `/api/pacotes/{id}/status`**: Atualiza o status de transmissão e tentativas de entrega de um pacote.
+  * **Parâmetros da Query**: `status` (String), `tentativas` (Integer, opcional).
+  * **Exemplo**: `/api/pacotes/1/status?status=IN_TRANSIT&tentativas=1`
 
-### 4. Audited Transactions
-* **GET `/api/transactions`**: List transactions with HATEOAS links.
-* **GET `/api/transactions/{id}`**: Retrieve single transaction with self links.
-* **POST `/api/transactions`**: Record and audit a space financial transaction. It automatically calculates `tmTerraCorrigido` and `desvioMicrossegundos` from the raw lunar time.
-  * **Payload**:
+### 4. Transações Auditadas
+* **GET `/api/transacoes`**: Lista todas as transações auditadas com links HATEOAS incluídos na resposta.
+* **GET `/api/transacoes/{id}`**: Recupera uma transação auditada específica com links HATEOAS.
+* **POST `/api/transacoes`**: Registra e audita uma transação financeira espacial. O gateway calcula de forma automática o `tempoTerraCorrigidoUs` e o `desvioMicrossegundos` relativísticos com base no tempo bruto lunar informado.
+  * **Corpo da Requisição**:
     ```json
     {
       "operadoraId": 1,
-      "vlCreditos": 5000.0,
-      "tmLunarBruto": 1779986400000056,
+      "valorCreditos": 5000.0,
+      "tempoLunarBrutoUs": 1779986400000056,
       "hashTransacao": "8f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a09"
     }
     ```
 
 ---
 
-## How to Build and Run
+## Como Construir e Executar o Projeto
 
-### 1. Build project:
+### 1. Compilar e rodar testes:
 ```bash
 mvn clean package
 ```
 
-### 2. Run project:
+### 2. Iniciar a aplicação Spring Boot:
 ```bash
 mvn spring-boot:run
 ```
 
-### 3. H2 Console:
-Access `http://localhost:8080/h2-console` with:
-- JDBC URL: `jdbc:h2:mem:chronosdb`
-- Username: `sa`
-- Password: `password`
+### 3. Console do Banco de Dados H2:
+Acesse `http://localhost:8080/h2-console` usando as credenciais:
+- **JDBC URL**: `jdbc:h2:mem:chronosdb`
+- **Username**: `sa`
+- **Password**: `password`
 
-### 4. OpenAPI / Swagger Documentation:
-Access Swagger UI at `http://localhost:8080/swagger-ui/index.html` to view endpoints and execute test requests.
+### 4. Documentação OpenAPI / Swagger UI:
+Acesse o Swagger UI em `http://localhost:8080/swagger-ui/index.html` para visualizar os endpoints detalhadamente e testar as requisições em tempo real.

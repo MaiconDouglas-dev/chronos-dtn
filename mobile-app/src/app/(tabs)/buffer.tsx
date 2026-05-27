@@ -6,23 +6,23 @@ import SpaceBackground from '../../components/SpaceBackground';
 import SpaceCard from '../../components/SpaceCard';
 import SpaceButton from '../../components/SpaceButton';
 import Header from '../../components/Header';
-import { Layers, Send, RefreshCw, AlertTriangle, CheckCircle, Database } from 'lucide-react-native';
+import { Layers, Send, RefreshCw, AlertTriangle, CheckCircle, ShieldAlert } from 'lucide-react-native';
 
 interface DtnBundle {
   id: number;
-  operadora_id: number;
-  pacote_metadata: string; // JSON formatted
-  tamanho_kb: number;
-  status_transmissao: string; // QUEUED, IN_TRANSIT, DELIVERED, EXPIRED, RETRYING
-  retries: number;
-  created_at: number; // microseconds
+  idOperador: number;
+  metadataPacote: string; // JSON formatted
+  tamanhoKb: number;
+  statusTransmissao: string; // QUEUED, IN_TRANSIT, DELIVERED, EXPIRED, RETRYING
+  tentativas: number;
+  criadoEm: number; // microseconds
 }
 
 interface ParsedMetadata {
-  bundle_id?: string;
-  destination?: string;
-  payload_hash?: string;
-  priority?: string;
+  idPacote?: string;
+  destino?: string;
+  hashPayload?: string;
+  prioridade?: string;
 }
 
 export default function DtnBuffer() {
@@ -34,39 +34,96 @@ export default function DtnBuffer() {
   const mockBundles: DtnBundle[] = [
     {
       id: 1,
-      operadora_id: 1,
-      pacote_metadata: '{"bundle_id":"dtn://selene.luna/trans-001","destination":"dtn://earth.gateway/finance","payload_hash":"a4f6d70bc70a...","priority":"HIGH"}',
-      tamanho_kb: 12.50,
-      status_transmissao: 'QUEUED',
-      retries: 0,
-      created_at: 1779900000000000
+      idOperador: 1,
+      metadataPacote: '{"idPacote":"dtn://selene.luna/trans-001","destino":"dtn://earth.gateway/finance","hashPayload":"a4f6d70bc70a...","prioridade":"ALTA"}',
+      tamanhoKb: 12.50,
+      statusTransmissao: 'QUEUED',
+      tentativas: 0,
+      criadoEm: 1779900000000000
     },
     {
       id: 2,
-      operadora_id: 2,
-      pacote_metadata: '{"bundle_id":"dtn://selene.luna/trans-002","destination":"dtn://earth.gateway/finance","payload_hash":"c9b2e11df30e...","priority":"MEDIUM"}',
-      tamanho_kb: 85.20,
-      status_transmissao: 'IN_TRANSIT',
-      retries: 1,
-      created_at: 1779900001000000
+      idOperador: 2,
+      metadataPacote: '{"idPacote":"dtn://selene.luna/trans-002","destino":"dtn://earth.gateway/finance","hashPayload":"c9b2e11df30e...","prioridade":"MEDIA"}',
+      tamanhoKb: 85.20,
+      statusTransmissao: 'IN_TRANSIT',
+      tentativas: 1,
+      criadoEm: 1779900001000000
     },
     {
       id: 3,
-      operadora_id: 3,
-      pacote_metadata: '{"bundle_id":"dtn://artemis.orbit/telemetry-09","destination":"dtn://esa.darmstadt/telemetry","payload_hash":"8f2302e1c95b...","priority":"LOW"}',
-      tamanho_kb: 1024.00,
-      status_transmissao: 'RETRYING',
-      retries: 3,
-      created_at: 1779900005000000
+      idOperador: 3,
+      metadataPacote: '{"idPacote":"dtn://artemis.orbit/telemetry-09","destino":"dtn://esa.darmstadt/telemetry","hashPayload":"8f2302e1c95b...","prioridade":"BAIXA"}',
+      tamanhoKb: 1024.00,
+      statusTransmissao: 'RETRYING',
+      tentativas: 3,
+      criadoEm: 1779900005000000
     }
   ];
+
+  const normalizeBundle = (data: any): DtnBundle => {
+    return {
+      id: data.id,
+      idOperador: data.idOperador ?? data.id_operador ?? data.operadora_id ?? 0,
+      metadataPacote: data.metadataPacote ?? data.pacoteMetadata ?? data.pacote_metadata ?? '',
+      tamanhoKb: data.tamanhoKb ?? data.tamanho_kb ?? 0,
+      statusTransmissao: data.statusTransmissao ?? data.status_transmissao ?? 'QUEUED',
+      tentativas: data.tentativas ?? data.retries ?? 0,
+      criadoEm: data.criadoEm ?? data.created_at ?? data.criado_em ?? 0,
+    };
+  };
+
+  const executeRequest = async (method: 'get' | 'post', path: string) => {
+    let cSharpPath = path;
+    if (path === '/pacotes') {
+      cSharpPath = '/filadtn';
+    } else if (path.startsWith('/pacotes/transmissao/')) {
+      const id = path.split('/').pop();
+      cSharpPath = `/filadtn/transmit/${id}`;
+    } else if (path === '/pacotes/transmissao-total') {
+      cSharpPath = '/filadtn/transmit-all';
+    }
+    
+    let legacyPath = path;
+    if (path === '/pacotes') {
+      legacyPath = '/dtn/queue';
+    } else if (path.startsWith('/pacotes/transmissao/')) {
+      const id = path.split('/').pop();
+      legacyPath = `/dtn/transmit/${id}`;
+    } else if (path === '/pacotes/transmissao-total') {
+      legacyPath = '/dtn/transmit-all';
+    }
+
+    if (method === 'get') {
+      try {
+        return await api.get(path);
+      } catch {
+        try {
+          return await api.get(cSharpPath);
+        } catch {
+          return await api.get(legacyPath);
+        }
+      }
+    } else {
+      try {
+        return await api.post(path);
+      } catch {
+        try {
+          return await api.post(cSharpPath);
+        } catch {
+          return await api.post(legacyPath);
+        }
+      }
+    }
+  };
 
   const fetchQueue = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/dtn/queue');
+      const res = await executeRequest('get', '/pacotes');
       if (res && res.data) {
-        setQueue(res.data);
+        const rawList = Array.isArray(res.data) ? res.data : [];
+        setQueue(rawList.map(normalizeBundle));
         setIsSimulated(false);
       } else {
         setQueue(mockBundles);
@@ -87,18 +144,18 @@ export default function DtnBuffer() {
   const handleTransmitSingle = async (bundleId: number) => {
     setIsLoading(true);
     try {
-      const res = await api.post(`/dtn/transmit/${bundleId}`);
-      if (res && res.data) {
+      const res = await executeRequest('post', `/pacotes/transmissao/${bundleId}`);
+      if (res && (res.status === 200 || res.status === 204 || res.data)) {
         await fetchQueue();
       } else {
         // Mock transmission locally
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
         setQueue(prev =>
           prev.map(b =>
             b.id === bundleId
-              ? { ...b, status_transmissao: 'DELIVERED', retries: b.retries + 1 }
+              ? { ...b, statusTransmissao: 'DELIVERED', tentativas: b.tentativas + 1 }
               : b
-          ).filter(b => b.status_transmissao !== 'DELIVERED') // Clear delivered from buffer queue
+          ).filter(b => b.statusTransmissao !== 'DELIVERED')
         );
       }
     } catch (err) {
@@ -107,9 +164,9 @@ export default function DtnBuffer() {
       setQueue(prev =>
         prev.map(b =>
           b.id === bundleId
-            ? { ...b, status_transmissao: 'DELIVERED', retries: b.retries + 1 }
+            ? { ...b, statusTransmissao: 'DELIVERED', tentativas: b.tentativas + 1 }
             : b
-        ).filter(b => b.status_transmissao !== 'DELIVERED')
+        ).filter(b => b.statusTransmissao !== 'DELIVERED')
       );
     } finally {
       setIsLoading(false);
@@ -119,8 +176,8 @@ export default function DtnBuffer() {
   const handleTransmitAll = async () => {
     setIsLoading(true);
     try {
-      const res = await api.post('/dtn/transmit-all');
-      if (res && res.data) {
+      const res = await executeRequest('post', '/pacotes/transmissao-total');
+      if (res && (res.status === 200 || res.status === 204 || res.data)) {
         await fetchQueue();
       } else {
         // Mock transmission locally
@@ -138,30 +195,49 @@ export default function DtnBuffer() {
 
   const parseMetadata = (metaStr: string): ParsedMetadata => {
     try {
-      return JSON.parse(metaStr);
+      const parsed = JSON.parse(metaStr);
+      return {
+        idPacote: parsed.idPacote ?? parsed.bundle_id ?? parsed.bundleId ?? parsed.id_pacote ?? 'n/a',
+        destino: parsed.destino ?? parsed.destination ?? 'dtn://desconhecido',
+        hashPayload: parsed.hashPayload ?? parsed.payload_hash ?? parsed.payloadHash ?? parsed.hash_payload ?? 'n/a',
+        prioridade: parsed.prioridade ?? parsed.priority ?? 'NORMAL',
+      };
     } catch {
-      return {};
+      return {
+        idPacote: 'n/a',
+        destino: 'dtn://desconhecido',
+        hashPayload: 'n/a',
+        prioridade: 'NORMAL',
+      };
     }
   };
 
-  const totalPayloadSize = queue.reduce((sum, item) => sum + Number(item.tamanho_kb), 0);
+  const totalPayloadSize = queue.reduce((sum, item) => sum + Number(item.tamanhoKb), 0);
 
   return (
     <SpaceBackground scrollable={false}>
       <Header />
 
+      {/* Mode Indicator */}
+      {isSimulated && (
+        <View style={styles.simulationBanner}>
+          <ShieldAlert color="#FFB300" size={16} style={{ marginRight: 6 }} />
+          <Text style={styles.simulationText}>Modo de Fila Simulada (Cache Local Offline)</Text>
+        </View>
+      )}
+
       {/* Overview Card */}
       <SpaceCard borderAccent="amber" style={styles.overviewCard}>
         <View style={styles.overviewHeader}>
           <View>
-            <Text style={styles.overviewLabel}>DTN Buffer Capacity</Text>
+            <Text style={styles.overviewLabel}>Capacidade do Buffer DTN</Text>
             <Text style={styles.overviewValue}>
-              {queue.length} <Text style={styles.overviewSub}>bundles queued</Text>
+              {queue.length} <Text style={styles.overviewSub}>pacotes na fila</Text>
             </Text>
           </View>
           <View style={styles.verticalSeparator} />
           <View>
-            <Text style={styles.overviewLabel}>Total Queued Size</Text>
+            <Text style={styles.overviewLabel}>Tamanho Total Retido</Text>
             <Text style={styles.overviewValue}>
               {totalPayloadSize >= 1024 
                 ? `${(totalPayloadSize / 1024).toFixed(2)} MB` 
@@ -172,7 +248,7 @@ export default function DtnBuffer() {
         
         <View style={styles.overviewActions}>
           <SpaceButton
-            title="Force Global Transmission"
+            title="Forçar Transmissão Global"
             variant="secondary"
             onPress={handleTransmitAll}
             disabled={queue.length === 0}
@@ -187,7 +263,7 @@ export default function DtnBuffer() {
       {/* Queue Header Title */}
       <View style={styles.queueHeader}>
         <Layers color="#94A3B8" size={18} style={{ marginRight: 6 }} />
-        <Text style={styles.queueTitle}>Retention Buffer Packets</Text>
+        <Text style={styles.queueTitle}>Pacotes no Buffer de Retenção</Text>
       </View>
 
       {/* Buffer list */}
@@ -198,31 +274,45 @@ export default function DtnBuffer() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <CheckCircle color="#00F5A0" size={48} />
-            <Text style={styles.emptyText}>Buffer queue empty. All bundles routed!</Text>
+            <Text style={styles.emptyText}>Fila de buffer vazia. Todos os pacotes foram roteados!</Text>
           </View>
         }
         renderItem={({ item }) => {
-          const meta = parseMetadata(item.pacote_metadata);
-          const isRetrying = item.status_transmissao === 'RETRYING';
-          const isInTransit = item.status_transmissao === 'IN_TRANSIT';
-          const isQueued = item.status_transmissao === 'QUEUED';
+          const meta = parseMetadata(item.metadataPacote);
+          const isRetrying = item.statusTransmissao === 'RETRYING' || item.statusTransmissao === 'TENTANDO';
+          const isInTransit = item.statusTransmissao === 'IN_TRANSIT' || item.statusTransmissao === 'EM_TRANSITO';
+          const isQueued = item.statusTransmissao === 'QUEUED' || item.statusTransmissao === 'AGUARDANDO';
 
           let statusAccent: 'cyan' | 'amber' | 'purple' | 'magenta' = 'cyan';
-          if (isQueued) statusAccent = 'purple';
-          if (isInTransit) statusAccent = 'cyan';
-          if (isRetrying) statusAccent = 'amber';
-          if (item.status_transmissao === 'EXPIRED') statusAccent = 'magenta';
+          let statusText = item.statusTransmissao;
+
+          if (isQueued) {
+            statusAccent = 'purple';
+            statusText = 'AGUARDANDO';
+          } else if (isInTransit) {
+            statusAccent = 'cyan';
+            statusText = 'EM TRÂNSITO';
+          } else if (isRetrying) {
+            statusAccent = 'amber';
+            statusText = 'REPETINDO';
+          } else if (item.statusTransmissao === 'EXPIRED' || item.statusTransmissao === 'EXPIRADO') {
+            statusAccent = 'magenta';
+            statusText = 'EXPIRADO';
+          } else if (item.statusTransmissao === 'DELIVERED' || item.statusTransmissao === 'ENTREGUE') {
+            statusAccent = 'cyan';
+            statusText = 'ENTREGUE';
+          }
 
           return (
             <SpaceCard borderAccent={statusAccent} style={styles.bundleCard}>
               <View style={styles.bundleHeader}>
                 <View style={styles.bundleDestGroup}>
-                  <Text style={styles.bundleDestLabel}>Destination Endpoint</Text>
-                  <Text style={styles.bundleDestText} numberOfLines={1}>{meta.destination || 'dtn://unknown'}</Text>
+                  <Text style={styles.bundleDestLabel}>Endpoint de Destino</Text>
+                  <Text style={styles.bundleDestText} numberOfLines={1}>{meta.destino || 'dtn://unknown'}</Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: isQueued ? '#8A57FF15' : isRetrying ? '#FFB30015' : '#00F2FE15' }]}>
                   <Text style={[styles.statusText, { color: isQueued ? '#8A57FF' : isRetrying ? '#FFB300' : '#00F2FE' }]}>
-                    {item.status_transmissao}
+                    {statusText}
                   </Text>
                 </View>
               </View>
@@ -230,39 +320,39 @@ export default function DtnBuffer() {
               {/* Bundle specifications */}
               <View style={styles.metaRow}>
                 <View style={styles.metaCol}>
-                  <Text style={styles.metaLabel}>Bundle size</Text>
-                  <Text style={styles.metaValue}>{item.tamanho_kb.toFixed(2)} KB</Text>
+                  <Text style={styles.metaLabel}>Tamanho</Text>
+                  <Text style={styles.metaValue}>{item.tamanhoKb.toFixed(2)} KB</Text>
                 </View>
                 <View style={styles.metaCol}>
-                  <Text style={styles.metaLabel}>Priority</Text>
-                  <Text style={[styles.metaValue, meta.priority === 'HIGH' && { color: '#FF007A' }]}>
-                    {meta.priority || 'NORMAL'}
+                  <Text style={styles.metaLabel}>Prioridade</Text>
+                  <Text style={[styles.metaValue, (meta.prioridade === 'HIGH' || meta.prioridade === 'ALTA') && { color: '#FF007A' }]}>
+                    {meta.prioridade || 'NORMAL'}
                   </Text>
                 </View>
                 <View style={styles.metaCol}>
-                  <Text style={styles.metaLabel}>Retries</Text>
-                  <Text style={styles.metaValue}>{item.retries} attempts</Text>
+                  <Text style={styles.metaLabel}>Tentativas</Text>
+                  <Text style={styles.metaValue}>{item.tentativas} envios</Text>
                 </View>
               </View>
 
               {/* Collapsed Info details */}
               <View style={styles.detailsBlock}>
-                <Text style={styles.detailLabel}>Bundle URI:</Text>
-                <Text style={styles.detailVal}>{meta.bundle_id || 'n/a'}</Text>
+                <Text style={styles.detailLabel}>URI do Pacote:</Text>
+                <Text style={styles.detailVal}>{meta.idPacote || 'n/a'}</Text>
                 
-                <Text style={styles.detailLabel}>Payload SHA-256:</Text>
-                <Text style={styles.detailVal}>{meta.payload_hash || 'n/a'}</Text>
+                <Text style={styles.detailLabel}>Hash SHA-256:</Text>
+                <Text style={styles.detailVal}>{meta.hashPayload || 'n/a'}</Text>
 
-                <Text style={styles.detailLabel}>Queued Timestamp:</Text>
-                <Text style={styles.detailVal}>{item.created_at} μs</Text>
+                <Text style={styles.detailLabel}>Timestamp na Fila:</Text>
+                <Text style={styles.detailVal}>{item.criadoEm} μs</Text>
               </View>
 
               {/* Action buttons */}
               <View style={styles.bundleActions}>
-                {item.retries >= 3 && (
+                {item.tentativas >= 3 && (
                   <View style={styles.warningContainer}>
                     <AlertTriangle color="#FFB300" size={14} style={{ marginRight: 4 }} />
-                    <Text style={styles.warningText}>Retry limit warning</Text>
+                    <Text style={styles.warningText}>Aviso: limite de tentativas</Text>
                   </View>
                 )}
                 <TouchableOpacity 
@@ -270,7 +360,7 @@ export default function DtnBuffer() {
                   onPress={() => handleTransmitSingle(item.id)}
                 >
                   <Send color="#00F2FE" size={14} style={{ marginRight: 6 }} />
-                  <Text style={styles.transmitBtnText}>Force Routing</Text>
+                  <Text style={styles.transmitBtnText}>Forçar Roteamento</Text>
                 </TouchableOpacity>
               </View>
             </SpaceCard>
@@ -282,6 +372,21 @@ export default function DtnBuffer() {
 }
 
 const styles = StyleSheet.create({
+  simulationBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFB30015',
+    borderWidth: 1,
+    borderColor: '#FFB30040',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 16,
+  },
+  simulationText: {
+    color: '#FFB300',
+    fontSize: 12,
+    fontWeight: '500',
+  },
   overviewCard: {
     padding: 14,
     marginBottom: 16,

@@ -4,15 +4,15 @@ import { subscribeToLoading, subscribeToError, subscribeToUnauthorized } from '.
 import { useRouter } from 'expo-router';
 
 interface AppContextProps {
-  serverUrl: string;
-  jwtToken: string | null;
-  operatorId: string | null;
-  operatorName: string | null;
+  urlServidor: string;
+  tokenJwt: string | null;
+  idOperador: string | null;
+  nomeOperador: string | null;
   isLoading: boolean;
   setIsLoading: (val: boolean) => void;
   globalError: string | null;
   setGlobalError: (val: string | null) => void;
-  updateConfig: (serverUrl: string, jwtToken: string | null, operatorId: string | null, operatorName: string | null) => Promise<void>;
+  updateConfig: (urlServidor: string, tokenJwt: string | null, idOperador: string | null, nomeOperador: string | null) => Promise<void>;
   logout: () => Promise<void>;
   isConfigured: boolean;
 }
@@ -20,10 +20,10 @@ interface AppContextProps {
 const AppContext = createContext<AppContextProps | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [serverUrl, setServerUrlState] = useState<string>('http://10.0.2.2:3000/api'); // Default to Android emulator local IP, or override in Profile
-  const [jwtToken, setJwtTokenState] = useState<string | null>(null);
-  const [operatorId, setOperatorIdState] = useState<string | null>(null);
-  const [operatorName, setOperatorNameState] = useState<string | null>(null);
+  const [urlServidor, setUrlServidorState] = useState<string>('http://10.0.2.2:3000/api'); // Default to Android emulator local IP, or override in Profile
+  const [tokenJwt, setTokenJwtState] = useState<string | null>(null);
+  const [idOperador, setIdOperadorState] = useState<string | null>(null);
+  const [nomeOperador, setNomeOperadorState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const router = useRouter();
@@ -31,15 +31,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Load from storage on mount
   useEffect(() => {
     async function loadConfig() {
-      const storedUrl = await getItem('serverUrl');
-      const storedToken = await getItem('jwtToken');
-      const storedOpId = await getItem('operatorId');
-      const storedOpName = await getItem('operatorName');
+      const storedUrl = await getItem('urlServidor');
+      const storedToken = await getItem('tokenJwt');
+      const storedOpId = await getItem('idOperador');
+      const storedOpName = await getItem('nomeOperador');
 
-      if (storedUrl) setServerUrlState(storedUrl);
-      if (storedToken) setJwtTokenState(storedToken);
-      if (storedOpId) setOperatorIdState(storedOpId);
-      if (storedOpName) setOperatorNameState(storedOpName);
+      if (storedUrl) setUrlServidorState(storedUrl);
+      if (storedToken) setTokenJwtState(storedToken);
+      if (storedOpId) setIdOperadorState(storedOpId);
+      if (storedOpName) setNomeOperadorState(storedOpName);
     }
     loadConfig();
   }, []);
@@ -74,47 +74,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     newOpId: string | null,
     newOpName: string | null
   ) => {
-    setServerUrlState(newUrl);
-    setJwtTokenState(newToken);
-    setOperatorIdState(newOpId);
-    setOperatorNameState(newOpName);
+    setUrlServidorState(newUrl);
+    setTokenJwtState(newToken);
+    setIdOperadorState(newOpId);
+    setNomeOperadorState(newOpName);
 
-    await setItem('serverUrl', newUrl);
+    await setItem('urlServidor', newUrl);
     if (newToken) {
-      await setItem('jwtToken', newToken);
+      await setItem('tokenJwt', newToken);
     } else {
-      await deleteItem('jwtToken');
+      await deleteItem('tokenJwt');
     }
     if (newOpId) {
-      await setItem('operatorId', newOpId);
+      await setItem('idOperador', newOpId);
     } else {
-      await deleteItem('operatorId');
+      await deleteItem('idOperador');
     }
     if (newOpName) {
-      await setItem('operatorName', newOpName);
+      await setItem('nomeOperador', newOpName);
     } else {
-      await deleteItem('operatorName');
+      await deleteItem('nomeOperador');
     }
   };
 
   const logout = async () => {
-    setJwtTokenState(null);
-    setOperatorIdState(null);
-    setOperatorNameState(null);
-    await deleteItem('jwtToken');
-    await deleteItem('operatorId');
-    await deleteItem('operatorName');
+    setTokenJwtState(null);
+    setIdOperadorState(null);
+    setNomeOperadorState(null);
+    await deleteItem('tokenJwt');
+    await deleteItem('idOperador');
+    await deleteItem('nomeOperador');
   };
 
-  const isConfigured = !!serverUrl;
+  const isConfigured = !!urlServidor;
 
   return (
     <AppContext.Provider
       value={{
-        serverUrl,
-        jwtToken,
-        operatorId,
-        operatorName,
+        urlServidor,
+        tokenJwt,
+        idOperador,
+        nomeOperador,
         isLoading,
         setIsLoading,
         globalError,

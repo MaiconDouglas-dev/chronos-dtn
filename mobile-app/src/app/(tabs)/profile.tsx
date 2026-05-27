@@ -11,17 +11,17 @@ import { Shield, Key, Network, ShieldCheck, LogOut, CheckCircle2, AlertTriangle 
 
 export default function Profile() {
   const {
-    serverUrl,
-    jwtToken,
-    operatorId,
-    operatorName,
+    urlServidor,
+    tokenJwt,
+    idOperador,
+    nomeOperador,
     updateConfig,
     logout,
     setIsLoading,
     setGlobalError,
   } = useApp();
 
-  const [inputUrl, setInputUrl] = useState(serverUrl);
+  const [inputUrl, setInputUrl] = useState(urlServidor);
   const [operatorCode, setOperatorCode] = useState('');
   const [operatorPass, setOperatorPass] = useState('');
   const [pingStatus, setPingStatus] = useState<'IDLE' | 'SUCCESS' | 'FAILED'>('IDLE');
@@ -30,21 +30,30 @@ export default function Profile() {
 
   // Sync inputs with context updates
   useEffect(() => {
-    setInputUrl(serverUrl);
-  }, [serverUrl]);
+    setInputUrl(urlServidor);
+  }, [urlServidor]);
 
   const testConnection = async (urlToTest: string) => {
     setPingStatus('IDLE');
     setPingLatency(null);
     const start = Date.now();
     try {
-      // Direct call bypassing default config to test custom url
-      const res = await api.get('/nodes', {
-        baseURL: urlToTest,
-        timeout: 5000
-      });
+      // Try Java `/api/nos` endpoint first, then C# `/api/nosatelite`
+      let res;
+      try {
+        res = await api.get('/nos', {
+          baseURL: urlToTest,
+          timeout: 4000
+        });
+      } catch (err) {
+        res = await api.get('/nosatelite', {
+          baseURL: urlToTest,
+          timeout: 4000
+        });
+      }
+
       const end = Date.now();
-      if (res.status === 200) {
+      if (res && (res.status === 200 || res.status === 201)) {
         setPingStatus('SUCCESS');
         setPingLatency(end - start);
         return true;
@@ -59,68 +68,89 @@ export default function Profile() {
 
   const handleSaveConnection = async () => {
     if (!inputUrl.trim()) {
-      setGlobalError('Server URL is required');
+      setGlobalError('A URL do servidor é obrigatória');
       return;
     }
     setLocalLoading(true);
     const isOnline = await testConnection(inputUrl);
-    await updateConfig(inputUrl, jwtToken, operatorId, operatorName);
+    await updateConfig(inputUrl, tokenJwt, idOperador, nomeOperador);
     setLocalLoading(false);
     
     if (isOnline) {
-      Alert.alert('Configuration Saved', 'Connected to the interplanetary gateway successfully.');
+      Alert.alert('Configuração Salva', 'Conectado ao gateway interplanetário com sucesso.');
     } else {
       Alert.alert(
-        'Server Unreachable',
-        'Saved the URL, but the server is offline. Application will fall back to simulated telemetry.',
-        [{ text: 'Acknowledge' }]
+        'Servidor Inacessível',
+        'A URL foi salva, mas o servidor está offline. O aplicativo usará telemetria simulada.',
+        [{ text: 'Entendido' }]
       );
     }
   };
 
   const handleLogin = async () => {
     if (!operatorCode.trim()) {
-      setGlobalError('Operator registration code is required');
+      setGlobalError('O código de registro do operador é obrigatório');
       return;
     }
 
     setIsLoading(true);
+    const codeUpper = operatorCode.trim().toUpperCase();
+
+    // Payload supports Java (username/password), C# (Username/Password), and custom (codigo_registro/codigoRegistro)
     const payload = {
-      codigo_registro: operatorCode.trim().toUpperCase(),
+      username: codeUpper,
+      Username: codeUpper,
+      password: operatorPass || 'password',
+      Password: operatorPass || 'password',
+      codigoRegistro: codeUpper,
+      codigo_registro: codeUpper,
     };
 
     try {
-      const res = await api.post('/login', payload);
-      if (res && res.data && res.data.token) {
-        const { token, operator } = res.data;
-        await updateConfig(serverUrl, token, operator.codigo_registro, operator.nome);
+      // Try Java endpoint first `/api/auth/login`, then C# `/api/auth/token` (or `/api/Auth/token`)
+      let res;
+      try {
+        res = await api.post('/auth/login', payload);
+      } catch (err) {
+        try {
+          res = await api.post('/Auth/token', payload);
+        } catch (err2) {
+          res = await api.post('/login', payload);
+        }
+      }
+
+      if (res && res.data && (res.data.token || res.data.Token)) {
+        const token = res.data.token || res.data.Token;
+        const operatorName = res.data.operator?.nome || res.data.operatorName || 'Operador Sincronizado';
+        const operatorIdVal = res.data.operator?.codigo_registro || res.data.operatorId || codeUpper;
+        await updateConfig(urlServidor, token, operatorIdVal, operatorName);
         setOperatorCode('');
         setOperatorPass('');
       } else {
         // Mock authorization for seed codes
         await new Promise((resolve) => setTimeout(resolve, 800));
-        mockLocalLogin(payload.codigo_registro);
+        mockLocalLogin(codeUpper);
       }
     } catch (err) {
       // Mock local authorization if server fails
       await new Promise((resolve) => setTimeout(resolve, 800));
-      mockLocalLogin(payload.codigo_registro);
+      mockLocalLogin(codeUpper);
     } finally {
       setIsLoading(false);
     }
   };
 
   const mockLocalLogin = async (code: string) => {
-    let name = 'Relay Consortium Operator';
+    let name = 'Operador do Consórcio de Relays';
     if (code === 'AETHER-LUN-01') name = 'Aether Lunar Logistics';
     if (code === 'SELENE-FIN-02') name = 'Selene Financial Corp';
     if (code === 'ARTEMIS-REL-03') name = 'Artemis Relay Consortium';
 
     const mockToken = 'mock_jwt_' + Math.random().toString(36).substring(7);
-    await updateConfig(serverUrl, mockToken, code, name);
+    await updateConfig(urlServidor, mockToken, code, name);
     setOperatorCode('');
     setOperatorPass('');
-    Alert.alert('Operator Authorized', `Logged in as: ${name} (Simulation Mode).`);
+    Alert.alert('Operador Autorizado', `Autenticado como: ${name} (Modo de Simulação).`);
   };
 
   const handleLogout = async () => {
@@ -135,35 +165,35 @@ export default function Profile() {
       <Header />
 
       {/* Operator Session status card */}
-      {jwtToken ? (
+      {tokenJwt ? (
         <SpaceCard borderAccent="green" style={styles.sessionCard}>
           <View style={styles.cardHeader}>
             <ShieldCheck color="#00F5A0" size={24} style={{ marginRight: 10 }} />
             <View>
-              <Text style={styles.operatorTitle}>Authorized Operator Session</Text>
-              <Text style={styles.operatorSubtitle}>NASA/ESA Integrated Link</Text>
+              <Text style={styles.operatorTitle}>Sessão de Operador Autorizada</Text>
+              <Text style={styles.operatorSubtitle}>Link Integrado NASA/ESA</Text>
             </View>
           </View>
 
           <View style={styles.operatorDetails}>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Operator Name:</Text>
-              <Text style={styles.detailValue}>{operatorName}</Text>
+              <Text style={styles.detailLabel}>Nome do Operador:</Text>
+              <Text style={styles.detailValue}>{nomeOperador}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Registration ID:</Text>
-              <Text style={styles.detailCode}>{operatorId}</Text>
+              <Text style={styles.detailLabel}>ID de Registro:</Text>
+              <Text style={styles.detailCode}>{idOperador}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Token Status:</Text>
+              <Text style={styles.detailLabel}>Status do Token:</Text>
               <View style={styles.badgeActive}>
-                <Text style={styles.badgeTextActive}>ACTIVE JWT</Text>
+                <Text style={styles.badgeTextActive}>JWT ATIVO</Text>
               </View>
             </View>
           </View>
 
           <SpaceButton
-            title="Revoke Authorizations"
+            title="Revogar Autorizações"
             variant="danger"
             onPress={handleLogout}
             style={styles.actionBtn}
@@ -174,24 +204,24 @@ export default function Profile() {
           <View style={styles.cardHeader}>
             <Shield color="#8A57FF" size={24} style={{ marginRight: 10 }} />
             <View>
-              <Text style={styles.operatorTitle}>Operator Login</Text>
-              <Text style={styles.operatorSubtitle}>Input Aerospace Credentials</Text>
+              <Text style={styles.operatorTitle}>Login do Operador</Text>
+              <Text style={styles.operatorSubtitle}>Insira as Credenciais Aeroespaciais</Text>
             </View>
           </View>
 
           <Text style={styles.helperText}>
-            For offline testing, enter a code like <Text style={styles.codeSuggest}>AETHER-LUN-01</Text>, <Text style={styles.codeSuggest}>SELENE-FIN-02</Text> or <Text style={styles.codeSuggest}>ARTEMIS-REL-03</Text>.
+            Para testes offline, insira um código como <Text style={styles.codeSuggest}>AETHER-LUN-01</Text>, <Text style={styles.codeSuggest}>SELENE-FIN-02</Text> ou <Text style={styles.codeSuggest}>ARTEMIS-REL-03</Text>.
           </Text>
 
           <SpaceInput
-            label="Registration Code"
-            placeholder="e.g. AETHER-LUN-01"
+            label="Código de Registro"
+            placeholder="Ex: AETHER-LUN-01"
             value={operatorCode}
             onChangeText={setOperatorCode}
           />
 
           <SpaceInput
-            label="Authorization Key (Password)"
+            label="Chave de Autorização (Senha)"
             placeholder="••••••••"
             value={operatorPass}
             onChangeText={setOperatorPass}
@@ -199,7 +229,7 @@ export default function Profile() {
           />
 
           <SpaceButton
-            title="Authenticate & Synchronize"
+            title="Autenticar & Sincronizar"
             onPress={handleLogin}
             style={styles.actionBtn}
           />
@@ -211,13 +241,13 @@ export default function Profile() {
         <View style={styles.cardHeader}>
           <Network color="#00F2FE" size={24} style={{ marginRight: 10 }} />
           <View>
-            <Text style={styles.operatorTitle}>Interplanetary Gateway</Text>
-            <Text style={styles.operatorSubtitle}>Configure DTN Node Target Endpoints</Text>
+            <Text style={styles.operatorTitle}>Gateway Interplanetário</Text>
+            <Text style={styles.operatorSubtitle}>Configurar Endpoints de Destino do Nó DTN</Text>
           </View>
         </View>
 
         <SpaceInput
-          label="Server Endpoint URL"
+          label="URL do Endpoint do Servidor"
           placeholder="http://10.0.2.2:3000/api"
           value={inputUrl}
           onChangeText={setInputUrl}
@@ -226,7 +256,7 @@ export default function Profile() {
 
         {/* Diagnostic ping indicators */}
         <View style={styles.pingIndicatorRow}>
-          <Text style={styles.pingLabel}>Link Telemetry Status:</Text>
+          <Text style={styles.pingLabel}>Telemetria de Conexão:</Text>
           {pingStatus === 'SUCCESS' && (
             <View style={styles.pingBadgeSuccess}>
               <CheckCircle2 color="#00F5A0" size={12} style={{ marginRight: 4 }} />
@@ -236,24 +266,24 @@ export default function Profile() {
           {pingStatus === 'FAILED' && (
             <View style={styles.pingBadgeFailed}>
               <AlertTriangle color="#FF007A" size={12} style={{ marginRight: 4 }} />
-              <Text style={styles.pingTextFailed}>UNREACHABLE</Text>
+              <Text style={styles.pingTextFailed}>INACESSÍVEL</Text>
             </View>
           )}
           {pingStatus === 'IDLE' && (
-            <Text style={styles.pingTextIdle}>Pending diagnostic check</Text>
+            <Text style={styles.pingTextIdle}>Aguardando diagnóstico</Text>
           )}
         </View>
 
         <View style={styles.buttonGroup}>
           <SpaceButton
-            title="Ping Diagnostic"
+            title="Diagnóstico Ping"
             variant="outline"
             onPress={() => testConnection(inputUrl)}
             disabled={localLoading}
             style={styles.pingBtn}
           />
           <SpaceButton
-            title="Save & Connect"
+            title="Salvar & Conectar"
             variant="secondary"
             onPress={handleSaveConnection}
             loading={localLoading}

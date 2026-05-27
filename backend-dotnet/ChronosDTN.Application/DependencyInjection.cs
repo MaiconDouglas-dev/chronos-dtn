@@ -8,8 +8,8 @@ namespace ChronosDTN.Application
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
-            services.AddScoped<ISatelliteNodeService, SatelliteNodeService>();
-            services.AddScoped<IDtnQueueService, DtnQueueService>();
+            services.AddScoped<IServicoNoSatelite, ServicoNoSatelite>();
+            services.AddScoped<IServicoFilaDtn, ServicoFilaDtn>();
             return services;
         }
     }

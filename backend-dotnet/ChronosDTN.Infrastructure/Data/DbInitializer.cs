@@ -10,60 +10,60 @@ namespace ChronosDTN.Infrastructure.Data
     {
         public static async Task SeedAsync(ChronosDtnDbContext context)
         {
-            // Apply pending migrations automatically on startup
+            // Aplica as migrações pendentes automaticamente ao iniciar
             await context.Database.MigrateAsync();
 
-            // Seed Operators
-            if (!await context.Operators.AnyAsync())
+            // Semeia Operadores
+            if (!await context.Operadores.AnyAsync())
             {
-                var operators = new[]
+                var operadores = new[]
                 {
-                    new Operator { Name = "NASA Space Operations", Code = "NASA" },
-                    new Operator { Name = "ESA Operations", Code = "ESA" },
-                    new Operator { Name = "JAXA Space Control", Code = "JAXA" },
-                    new Operator { Name = "INPE Satellite Center", Code = "INPE" }
+                    new Operador { Nome = "NASA Space Operations", CodigoRegistro = "NASA" },
+                    new Operador { Nome = "ESA Operations", CodigoRegistro = "ESA" },
+                    new Operador { Nome = "JAXA Space Control", CodigoRegistro = "JAXA" },
+                    new Operador { Nome = "INPE Satellite Center", CodigoRegistro = "INPE" }
                 };
 
-                await context.Operators.AddRangeAsync(operators);
+                await context.Operadores.AddRangeAsync(operadores);
                 await context.SaveChangesAsync();
             }
 
-            // Seed Satellite Nodes
-            if (!await context.SatelliteNodes.AnyAsync())
+            // Semeia Nós de Satélites
+            if (!await context.NosSatelites.AnyAsync())
             {
-                var currentTime = (DateTime.UtcNow.Ticks - DateTime.UnixEpoch.Ticks) / 10;
-                var nodes = new[]
+                var tempoAtual = (DateTime.UtcNow.Ticks - DateTime.UnixEpoch.Ticks) / 10;
+                var nos = new[]
                 {
-                    new SatelliteNode
+                    new NoSatelite
                     {
-                        Name = "SGDC-1 (Geostationary)",
-                        IpAddress = "192.168.10.1",
-                        Port = 8081,
-                        Status = "Active",
-                        CreatedAtUs = currentTime,
-                        UpdatedAtUs = currentTime
+                        Nome = "SGDC-1 (Geostationary)",
+                        EnderecoIp = "192.168.10.1",
+                        Porta = 8081,
+                        Status = "Ativo",
+                        CriadoEmUs = tempoAtual,
+                        AtualizadoEmUs = tempoAtual
                     },
-                    new SatelliteNode
+                    new NoSatelite
                     {
-                        Name = "ISS (Space Station)",
-                        IpAddress = "192.168.10.2",
-                        Port = 8082,
-                        Status = "Active",
-                        CreatedAtUs = currentTime,
-                        UpdatedAtUs = currentTime
+                        Nome = "ISS (Space Station)",
+                        EnderecoIp = "192.168.10.2",
+                        Porta = 8082,
+                        Status = "Ativo",
+                        CriadoEmUs = tempoAtual,
+                        AtualizadoEmUs = tempoAtual
                     },
-                    new SatelliteNode
+                    new NoSatelite
                     {
-                        Name = "SCD-2 (Low Orbit)",
-                        IpAddress = "192.168.10.3",
-                        Port = 8083,
-                        Status = "Active",
-                        CreatedAtUs = currentTime,
-                        UpdatedAtUs = currentTime
+                        Nome = "SCD-2 (Low Orbit)",
+                        EnderecoIp = "192.168.10.3",
+                        Porta = 8083,
+                        Status = "Ativo",
+                        CriadoEmUs = tempoAtual,
+                        AtualizadoEmUs = tempoAtual
                     }
                 };
 
-                await context.SatelliteNodes.AddRangeAsync(nodes);
+                await context.NosSatelites.AddRangeAsync(nos);
                 await context.SaveChangesAsync();
             }
         }

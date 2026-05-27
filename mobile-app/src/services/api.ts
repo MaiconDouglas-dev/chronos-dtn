@@ -50,14 +50,14 @@ function triggerUnauthorized() {
 // Request interceptor
 api.interceptors.request.use(
   async (config) => {
-    const serverUrl = await getItem('serverUrl');
-    if (serverUrl) {
-      config.baseURL = serverUrl;
+    const urlServidor = await getItem('urlServidor');
+    if (urlServidor) {
+      config.baseURL = urlServidor;
     } else {
       config.baseURL = 'http://localhost:3000/api'; // Default simulation API endpoint
     }
 
-    const token = await getItem('jwtToken');
+    const token = await getItem('tokenJwt');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -68,7 +68,7 @@ api.interceptors.request.use(
   },
   (error) => {
     updateLoading(false);
-    triggerError(error.message || 'Request Error');
+    triggerError(error.message || 'Erro na requisição');
     return Promise.reject(error);
   }
 );
@@ -88,14 +88,14 @@ api.interceptors.response.use(
 
       if (status === 401) {
         triggerUnauthorized();
-        triggerError('Unauthorized - Session Expired or Invalid Token');
+        triggerError('Não autorizado - Sessão Expirada ou Token Inválido');
       } else {
         triggerError(message);
       }
     } else if (error.request) {
-      triggerError('Network Error - No response received from server. Verify connection settings.');
+      triggerError('Erro de Rede - Nenhuma resposta recebida do servidor. Verifique as configurações de conexão.');
     } else {
-      triggerError(error.message || 'Error occurred');
+      triggerError(error.message || 'Ocorreu um erro');
     }
 
     return Promise.reject(error);

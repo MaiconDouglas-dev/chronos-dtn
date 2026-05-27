@@ -143,3 +143,4 @@ C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN
 C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.API\obj\Debug\net8.0\ChronosDTN.API.pdb
 C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.API\obj\Debug\net8.0\ChronosDTN.API.genruntimeconfig.cache
 C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.API\obj\Debug\net8.0\ref\ChronosDTN.API.dll
+C:\Users\maico\.gemini\antigravity\scratch\chronos-dtn\backend-dotnet\ChronosDTN.API\obj\Debug\net8.0\ChronosDTN.API.sourcelink.json

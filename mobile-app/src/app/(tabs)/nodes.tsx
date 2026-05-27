@@ -12,10 +12,10 @@ import { Plus, Edit2, Trash2, X, Satellite, Cpu } from 'lucide-react-native';
 interface Node {
   id: number;
   nome: string;
-  latency_terra_ms: number;
-  latency_lua_ms: number;
+  latenciaTerraMs: number;
+  latenciaLuaMs: number;
   status: string;
-  throughput_kbps: number;
+  throughputKbps: number;
 }
 
 export default function NodesManager() {
@@ -27,24 +27,66 @@ export default function NodesManager() {
   // Form fields
   const [editingId, setEditingId] = useState<number | null>(null);
   const [nome, setNome] = useState('');
-  const [latencyTerra, setLatencyTerra] = useState('1280');
-  const [latencyLua, setLatencyLua] = useState('10');
+  const [latenciaTerra, setLatenciaTerra] = useState('1280');
+  const [latenciaLua, setLatenciaLua] = useState('10');
   const [status, setStatus] = useState('ONLINE');
   const [throughput, setThroughput] = useState('10240');
 
   const mockNodes: Node[] = [
-    { id: 1, nome: 'LunaPath-1 (Orbital Relay)', latency_terra_ms: 1320, latency_lua_ms: 8, status: 'ONLINE', throughput_kbps: 25600 },
-    { id: 2, nome: 'LOP-G Gateway Comms', latency_terra_ms: 1280, latency_lua_ms: 5, status: 'ONLINE', throughput_kbps: 102400 },
-    { id: 3, nome: 'Shackleton Surface Base', latency_terra_ms: 1410, latency_lua_ms: 2, status: 'DEGRADED', throughput_kbps: 512 },
-    { id: 4, nome: 'LunaRelay-4 (Far Side)', latency_terra_ms: 1550, latency_lua_ms: 15, status: 'ONLINE', throughput_kbps: 4096 },
+    { id: 1, nome: 'LunaPath-1 (Relay Orbital)', latenciaTerraMs: 1320, latenciaLuaMs: 8, status: 'ONLINE', throughputKbps: 25600 },
+    { id: 2, nome: 'LOP-G Gateway Comms', latenciaTerraMs: 1280, latenciaLuaMs: 5, status: 'ONLINE', throughputKbps: 102400 },
+    { id: 3, nome: 'Shackleton Surface Base', latenciaTerraMs: 1410, latenciaLuaMs: 2, status: 'DEGRADED', throughputKbps: 512 },
+    { id: 4, nome: 'LunaRelay-4 (Lado Oculto)', latenciaTerraMs: 1550, latenciaLuaMs: 15, status: 'ONLINE', throughputKbps: 4096 },
   ];
+
+  const normalizeNode = (data: any): Node => {
+    return {
+      id: data.id,
+      nome: data.nome || data.name || '',
+      latenciaTerraMs: data.latenciaTerraMs ?? data.latencyTerraMs ?? data.latency_terra_ms ?? 0,
+      latenciaLuaMs: data.latenciaLuaMs ?? data.latencyLuaMs ?? data.latency_lua_ms ?? 0,
+      status: data.status || 'OFFLINE',
+      throughputKbps: data.throughputKbps ?? data.throughput_kbps ?? 0,
+    };
+  };
+
+  const executeRequest = async (method: 'get' | 'post' | 'put' | 'delete', path: string, payload?: any) => {
+    // Resolves between Java (/api/nos) and C# (/api/nosatelite)
+    const cSharpPath = path.replace('/nos', '/nosatelite');
+    if (method === 'get') {
+      try {
+        return await api.get(path);
+      } catch {
+        return await api.get(cSharpPath);
+      }
+    } else if (method === 'post') {
+      try {
+        return await api.post(path, payload);
+      } catch {
+        return await api.post(cSharpPath, payload);
+      }
+    } else if (method === 'put') {
+      try {
+        return await api.put(path, payload);
+      } catch {
+        return await api.put(cSharpPath, payload);
+      }
+    } else {
+      try {
+        return await api.delete(path);
+      } catch {
+        return await api.delete(cSharpPath);
+      }
+    }
+  };
 
   const fetchNodes = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/nodes');
+      const res = await executeRequest('get', '/nos');
       if (res && res.data) {
-        setNodes(res.data);
+        const rawList = Array.isArray(res.data) ? res.data : [];
+        setNodes(rawList.map(normalizeNode));
       } else {
         setNodes(mockNodes);
       }
@@ -62,8 +104,8 @@ export default function NodesManager() {
   const resetForm = () => {
     setEditingId(null);
     setNome('');
-    setLatencyTerra('1280');
-    setLatencyLua('10');
+    setLatenciaTerra('1280');
+    setLatenciaLua('10');
     setStatus('ONLINE');
     setThroughput('10240');
     setShowForm(false);
@@ -72,30 +114,29 @@ export default function NodesManager() {
   const handleEdit = (node: Node) => {
     setEditingId(node.id);
     setNome(node.nome);
-    setLatencyTerra(node.latency_terra_ms.toString());
-    setLatencyLua(node.latency_lua_ms.toString());
+    setLatenciaTerra(node.latenciaTerraMs.toString());
+    setLatenciaLua(node.latenciaLuaMs.toString());
     setStatus(node.status);
-    setThroughput(node.throughput_kbps.toString());
+    setThroughput(node.throughputKbps.toString());
     setShowForm(true);
   };
 
   const handleDelete = async (id: number) => {
     Alert.alert(
-      'Confirm Deletion',
-      'Are you sure you want to decommission this connectivity node?',
+      'Confirmar Exclusão',
+      'Tem certeza de que deseja descomissionar este nó de conectividade?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancelar', style: 'cancel' },
         { 
-          text: 'Decommission', 
+          text: 'Descomissionar', 
           style: 'destructive',
           onPress: async () => {
             setLoading(true);
             try {
-              const res = await api.delete(`/nodes/${id}`);
-              if (res && res.data) {
+              const res = await executeRequest('delete', `/nos/${id}`);
+              if (res && (res.status === 200 || res.status === 204)) {
                 await fetchNodes();
               } else {
-                // local fallback
                 setNodes(nodes.filter(n => n.id !== id));
               }
             } catch (err) {
@@ -111,62 +152,61 @@ export default function NodesManager() {
 
   const handleSave = async () => {
     if (!nome.trim()) {
-      setGlobalError('Node name is required');
+      setGlobalError('O nome do nó é obrigatório');
       return;
     }
 
-    const latT = parseInt(latencyTerra);
-    const latL = parseInt(latencyLua);
+    const latT = parseInt(latenciaTerra);
+    const latL = parseInt(latenciaLua);
     const th = parseInt(throughput);
 
     if (isNaN(latT) || isNaN(latL) || isNaN(th)) {
-      setGlobalError('Latencies and Throughput must be valid integers');
+      setGlobalError('As latências e o throughput devem ser inteiros válidos');
       return;
     }
 
     setLoading(true);
+    // Payload translates properties and supports both backends
     const payload = {
       nome,
+      latenciaTerraMs: latT,
+      latencyTerraMs: latT,
       latency_terra_ms: latT,
+      latenciaLuaMs: latL,
+      latencyLuaMs: latL,
       latency_lua_ms: latL,
       status,
+      throughputKbps: th,
       throughput_kbps: th,
     };
 
     try {
       if (editingId) {
         // Edit Mode
-        const res = await api.put(`/nodes/${editingId}`, payload);
+        const res = await executeRequest('put', `/nos/${editingId}`, payload);
         if (res && res.data) {
           await fetchNodes();
         } else {
-          // local fallback
-          setNodes(nodes.map(n => n.id === editingId ? { ...n, ...payload } : n));
+          setNodes(nodes.map(n => n.id === editingId ? { ...n, ...normalizeNode(payload) } : n));
         }
       } else {
         // Create Mode
-        const res = await api.post('/nodes', payload);
+        const res = await executeRequest('post', '/nos', payload);
         if (res && res.data) {
           await fetchNodes();
         } else {
-          // local fallback
-          const newNode: Node = {
-            id: Date.now(),
-            ...payload,
-          };
+          const newNode = normalizeNode(payload);
+          newNode.id = Date.now();
           setNodes([...nodes, newNode]);
         }
       }
       resetForm();
     } catch (err) {
-      // Local updates in simulation mode
       if (editingId) {
-        setNodes(nodes.map(n => n.id === editingId ? { ...n, ...payload } : n));
+        setNodes(nodes.map(n => n.id === editingId ? { ...n, ...normalizeNode(payload) } : n));
       } else {
-        const newNode: Node = {
-          id: Date.now(),
-          ...payload,
-        };
+        const newNode = normalizeNode(payload);
+        newNode.id = Date.now();
         setNodes([...nodes, newNode]);
       }
       resetForm();
@@ -183,12 +223,12 @@ export default function NodesManager() {
       <View style={styles.titleRow}>
         <View style={styles.mainTitleContainer}>
           <Satellite color="#00F2FE" size={20} style={{ marginRight: 8 }} />
-          <Text style={styles.title}>Satellite Nodes</Text>
+          <Text style={styles.title}>Nós Satélites</Text>
         </View>
         {!showForm && (
           <TouchableOpacity style={styles.addBtn} onPress={() => setShowForm(true)}>
             <Plus color="#FFFFFF" size={16} style={{ marginRight: 4 }} />
-            <Text style={styles.addBtnText}>Deploy Node</Text>
+            <Text style={styles.addBtnText}>Ativar Nó</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -196,15 +236,15 @@ export default function NodesManager() {
       {showForm ? (
         <SpaceCard borderAccent="purple" style={styles.formContainer}>
           <View style={styles.formHeader}>
-            <Text style={styles.formTitle}>{editingId ? `Configure Node #${editingId}` : 'Deploy New Node'}</Text>
+            <Text style={styles.formTitle}>{editingId ? `Configurar Nó #${editingId}` : 'Ativar Novo Nó'}</Text>
             <TouchableOpacity onPress={resetForm}>
               <X color="#94A3B8" size={20} />
             </TouchableOpacity>
           </View>
 
           <SpaceInput
-            label="Node Name (e.g. Lunar Pathfinder)"
-            placeholder="Enter node identifier"
+            label="Nome do Nó (Ex: Lunar Pathfinder)"
+            placeholder="Identificador do nó satélite"
             value={nome}
             onChangeText={setNome}
           />
@@ -212,18 +252,18 @@ export default function NodesManager() {
           <View style={styles.formGrid}>
             <View style={styles.gridHalf}>
               <SpaceInput
-                label="Earth Latency (ms)"
+                label="Latência Terra (ms)"
                 keyboardType="numeric"
-                value={latencyTerra}
-                onChangeText={setLatencyTerra}
+                value={latenciaTerra}
+                onChangeText={setLatenciaTerra}
               />
             </View>
             <View style={styles.gridHalf}>
               <SpaceInput
-                label="Lunar Latency (ms)"
+                label="Latência Lua (ms)"
                 keyboardType="numeric"
-                value={latencyLua}
-                onChangeText={setLatencyLua}
+                value={latenciaLua}
+                onChangeText={setLatenciaLua}
               />
             </View>
           </View>
@@ -236,11 +276,12 @@ export default function NodesManager() {
           />
 
           {/* Status buttons */}
-          <Text style={styles.radioLabel}>Operational Status</Text>
+          <Text style={styles.radioLabel}>Status Operacional</Text>
           <View style={styles.radioGroup}>
             {['ONLINE', 'DEGRADED', 'OFFLINE'].map((st) => {
               const isActive = status === st;
               const accentColor = st === 'ONLINE' ? '#00F5A0' : st === 'DEGRADED' ? '#FFB300' : '#FF007A';
+              const stLabel = st === 'ONLINE' ? 'ONLINE' : st === 'DEGRADED' ? 'DEGRADADO' : 'OFFLINE';
               return (
                 <TouchableOpacity
                   key={st}
@@ -251,7 +292,7 @@ export default function NodesManager() {
                   onPress={() => setStatus(st)}
                 >
                   <Text style={[styles.radioText, isActive && { color: accentColor, fontWeight: 'bold' }]}>
-                    {st}
+                    {stLabel}
                   </Text>
                 </TouchableOpacity>
               );
@@ -260,13 +301,13 @@ export default function NodesManager() {
 
           <View style={styles.formActions}>
             <SpaceButton
-              title="Cancel"
+              title="Cancelar"
               variant="outline"
               onPress={resetForm}
               style={styles.actionBtn}
             />
             <SpaceButton
-              title="Deploy & Synchronize"
+              title="Ativar & Sincronizar"
               onPress={handleSave}
               style={[styles.actionBtn, { marginLeft: 12 }]}
               loading={loading}
@@ -281,24 +322,25 @@ export default function NodesManager() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Cpu color="#64748B" size={48} />
-              <Text style={styles.emptyText}>No active relays. Click deploy to start.</Text>
+              <Text style={styles.emptyText}>Nenhum nó de relay ativo. Clique em Ativar Nó.</Text>
             </View>
           }
           renderItem={({ item }) => {
             const isOnline = item.status === 'ONLINE';
             const isDegraded = item.status === 'DEGRADED';
             const statusAccent = isOnline ? 'green' : isDegraded ? 'amber' : 'magenta';
+            const statusLabel = isOnline ? 'ONLINE' : isDegraded ? 'DEGRADADO' : 'OFFLINE';
 
             return (
               <SpaceCard borderAccent={statusAccent} style={styles.nodeItem}>
                 <View style={styles.nodeHeader}>
                   <View>
                     <Text style={styles.nodeName}>{item.nome}</Text>
-                    <Text style={styles.nodeRate}>Throughput: {(item.throughput_kbps / 1024).toFixed(2)} Mbps</Text>
+                    <Text style={styles.nodeRate}>Throughput: {(item.throughputKbps / 1024).toFixed(2)} Mbps</Text>
                   </View>
                   <View style={[styles.statusBadge, { backgroundColor: isOnline ? '#05C18015' : isDegraded ? '#FFB30015' : '#FF007A15' }]}>
                     <Text style={[styles.statusText, { color: isOnline ? '#00F5A0' : isDegraded ? '#FFB300' : '#FF007A' }]}>
-                      {item.status}
+                      {statusLabel}
                     </Text>
                   </View>
                 </View>
@@ -306,13 +348,13 @@ export default function NodesManager() {
                 {/* Latency split row */}
                 <View style={styles.infoRow}>
                   <View style={styles.infoCol}>
-                    <Text style={styles.infoLabel}>Earth-Moon nominal delay</Text>
-                    <Text style={styles.infoVal}>{item.latency_terra_ms} ms</Text>
+                    <Text style={styles.infoLabel}>Atraso nominal Terra</Text>
+                    <Text style={styles.infoVal}>{item.latenciaTerraMs} ms</Text>
                   </View>
                   <View style={styles.dividerVertical} />
                   <View style={styles.infoCol}>
-                    <Text style={styles.infoLabel}>Surface-Orbit nominal delay</Text>
-                    <Text style={styles.infoVal}>{item.latency_lua_ms} ms</Text>
+                    <Text style={styles.infoLabel}>Atraso nominal Órbita Lua</Text>
+                    <Text style={styles.infoVal}>{item.latenciaLuaMs} ms</Text>
                   </View>
                 </View>
 
@@ -320,11 +362,11 @@ export default function NodesManager() {
                 <View style={styles.nodeActions}>
                   <TouchableOpacity style={styles.nodeActionBtn} onPress={() => handleEdit(item)}>
                     <Edit2 color="#00F2FE" size={14} style={{ marginRight: 6 }} />
-                    <Text style={styles.nodeActionTxt}>Configure</Text>
+                    <Text style={styles.nodeActionTxt}>Configurar</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.nodeActionBtn} onPress={() => handleDelete(item.id)}>
                     <Trash2 color="#FF007A" size={14} style={{ marginRight: 6 }} />
-                    <Text style={[styles.nodeActionTxt, { color: '#FF007A' }]}>Decommission</Text>
+                    <Text style={[styles.nodeActionTxt, { color: '#FF007A' }]}>Descomissionar</Text>
                   </TouchableOpacity>
                 </View>
               </SpaceCard>
@@ -495,6 +537,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#1E2540',
     paddingTop: 10,
+    marginTop: 4,
   },
   nodeActionBtn: {
     flexDirection: 'row',
