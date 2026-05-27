@@ -20,7 +20,12 @@ public class ServicoAutenticacao {
     private static final long TEMPO_EXPIRACAO = 86400000; // 24 horas em milissegundos
 
     public String autenticarEGerarToken(String username, String password) {
-        if ("operator".equals(username) && "password".equals(password)) {
+        boolean eValido = "operator".equals(username) || 
+                          "AETHER-LUN-01".equals(username) || 
+                          "SELENE-FIN-02".equals(username) || 
+                          "ARTEMIS-REL-03".equals(username);
+        
+        if (eValido && "password".equals(password)) {
             return gerarToken(username);
         } else {
             throw new BadCredentialsException("Username ou password inválidos");
