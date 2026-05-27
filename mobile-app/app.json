@@ -7,7 +7,9 @@
     "userInterfaceStyle": "dark",
     "scheme": "chronosdtn",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-secure-store",
+      "expo-asset"
     ]
   }
 }

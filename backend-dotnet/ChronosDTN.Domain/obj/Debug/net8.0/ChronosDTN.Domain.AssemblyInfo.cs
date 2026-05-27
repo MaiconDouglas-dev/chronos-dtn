@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ChronosDTN.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cdaba05514a3424af0da61048b869c07201df952")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c15ed4438842c607e1a07e5e312302eddbe742cf")]
 [assembly: System.Reflection.AssemblyProductAttribute("ChronosDTN.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ChronosDTN.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
