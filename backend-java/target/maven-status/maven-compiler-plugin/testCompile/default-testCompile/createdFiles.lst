@@ -1,0 +1,3 @@
+com\chronosdtn\gateway\GatewayIntegrationTest.class
+com\chronosdtn\gateway\ChronosDtnGatewayApplicationTests.class
+com\chronosdtn\gateway\service\TimeAuditingServiceTest.class
