@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Chronos DTN",
+    "slug": "chronos-dtn-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "chronosdtn",
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
