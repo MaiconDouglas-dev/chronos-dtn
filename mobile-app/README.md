@@ -82,6 +82,49 @@ npm start
 ### 3. Conexão & Autenticação
 Ao abrir o console:
 1. Vá até a aba **Acesso** (Perfil).
-2. Configure a URL do servidor de API ativo (ex: `http://localhost:8080/api` para Java ou `http://localhost:5000/api` para .NET. Use `http://10.0.2.2:8080/api` ou similar caso esteja rodando em emulador Android).
+2. Configure a URL do servidor de API ativo (ex: `http://localhost:8080/api` para Java ou `http://localhost:5246/api` para .NET. Use `http://10.0.2.2:8080/api` ou similar caso esteja rodando em emulador Android).
 3. Utilize o botão **Ping** para diagnosticar o status da conexão.
 4. No formulário de Login do Operador, digite o código de registro (ex: `AETHER-LUN-01` ou `SELENE-FIN-02`) e clique em **Autenticar** para iniciar a sua sessão operacional autorizada.
+
+---
+
+## 🧪 Roteiro de Testes Passo a Passo (Manual QA)
+
+Para verificar o funcionamento completo das integrações e recursos, siga o roteiro de testes abaixo:
+
+### Teste 1: Validação do Modo de Simulação Offline (Sem API)
+1. Abra o aplicativo e vá em qualquer tela sem configurar a conexão com o servidor.
+2. Certifique-se de que o banner amarelo **"Modo de Telemetria Simulada (Cache Local Offline)"** é exibido.
+3. Acesse a aba **Nós Satélites** e adicione um nó. Verifique se ele aparece na lista com a borda no status correto (`ONLINE`, `DEGRADADO`, etc.).
+4. Acesse a aba **Auditor de Tempo** e clique em **Auditar Agora**. Verifique a geração dinâmica de um cálculo relativístico com desvio em microssegundos.
+
+### Teste 2: Diagnóstico de Conexão (Ping)
+1. Certifique-se de que o backend desejado (Java ou .NET) está rodando no host.
+2. Na aba **Acesso**, insira a URL correta:
+   * **Web Browser (Local):** `http://localhost:8080/api` (Java) ou `http://localhost:5246/api` (C#).
+   * **Android Emulator:** `http://10.0.2.2:8080/api` (Java) ou `http://10.0.2.2:5246/api` (C#).
+3. Clique em **Salvar URL do Gateway**.
+4. Clique em **Diagnóstico Ping**. A telemetria deve mudar para **ONLINE** (com indicador de latência em milissegundos).
+
+### Teste 3: Autenticação com JWT
+1. Com a conexão online estabelecida, insira o código de operador `AETHER-LUN-01` no formulário de login (senha: `password`).
+2. Clique em **Autenticar & Sincronizar**.
+3. O card de sessão mudará para verde indicando **"Sessão de Operador Autorizada"** com status **"JWT ATIVO"**.
+4. Navegue para o **Dashboard**. O banner amarelo de simulação desaparecerá, provando que o app está sincronizado em tempo real com o backend.
+
+### Teste 4: CRUD de Nós Satélites (Online)
+1. Na aba **Nós Satélites**, clique em **Ativar Novo Nó**.
+2. Preencha os campos (Nome, Latências, Throughput e Status) e clique em **Ativar & Sincronizar**.
+3. Verifique se o registro foi salvo no banco de dados através da listagem atualizada.
+4. Clique em **Configurar** em um nó comercial existente, alterne seu status para `DEGRADADO` e salve. A borda do card deve mudar para laranja/amarelo âmbar instantaneamente.
+5. Clique em **Descomissionar** para excluir o nó. O item sumirá da lista e do banco de dados.
+
+### Teste 5: Fila DTN & Store-and-Forward (Online)
+1. Vá na aba **Fila DTN**. Você verá os pacotes retidos na fila com status **AGUARDANDO** (cor roxa).
+2. Clique no botão de transmissão individual de um pacote ou em **Transmitir Fila (Sincronizar)**.
+3. A animação de sincronização `SpaceLoader` será acionada e o status mudará para **ENTREGUE** ou **EM TRÂNSITO** (ciano).
+
+### Teste 6: Dilatação Relativística em Microssegundos (Online)
+1. Na aba **Auditor de Tempo**, clique no botão **Auditar Carimbo**.
+2. O app enviará o carimbo de data/hora atual lunar ao backend Java, que fará o cálculo e registrará a transação no banco de dados.
+3. Um novo log será adicionado ao histórico, exibindo a hora lunar bruta, a hora compensada da Terra e o desvio temporal relativístico exato em microssegundos (ex: `+56.02 μs` por dia de operação simulada).
