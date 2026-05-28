@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, View, ViewStyle, TextStyle } from 'react-native';
+import { useApp } from '../services/AppContext';
 
 interface SpaceInputProps {
   label?: string;
@@ -24,22 +25,25 @@ export const SpaceInput: React.FC<SpaceInputProps> = ({
   inputStyle,
   error,
 }) => {
+  const { colors } = useApp();
   const [isFocused, setIsFocused] = useState(false);
 
   return (
     <View style={[styles.container, style]}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={[styles.label, { color: colors.textSecondary }]}>{label}</Text>}
       <View
         style={[
           styles.inputWrapper,
-          isFocused && styles.focusedWrapper,
-          error ? styles.errorWrapper : null,
+          { 
+            backgroundColor: colors.inputBackground, 
+            borderColor: error ? colors.red : isFocused ? colors.accent : colors.border 
+          },
         ]}
       >
         <TextInput
-          style={[styles.input, inputStyle]}
+          style={[styles.input, { color: colors.text }, inputStyle]}
           placeholder={placeholder}
-          placeholderTextColor="#64748B"
+          placeholderTextColor={colors.textSecondary}
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={secureTextEntry}
@@ -50,7 +54,7 @@ export const SpaceInput: React.FC<SpaceInputProps> = ({
           autoCorrect={false}
         />
       </View>
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && <Text style={[styles.errorText, { color: colors.red }]}>{error}</Text>}
     </View>
   );
 };
@@ -60,32 +64,21 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    color: '#94A3B8',
     fontSize: 14,
     marginBottom: 6,
     fontWeight: '500',
   },
   inputWrapper: {
-    backgroundColor: '#0F1322',
     borderWidth: 1,
-    borderColor: '#232A46',
     borderRadius: 10,
     height: 48,
     justifyContent: 'center',
     paddingHorizontal: 12,
   },
-  focusedWrapper: {
-    borderColor: '#8A57FF',
-  },
-  errorWrapper: {
-    borderColor: '#FF007A',
-  },
   input: {
-    color: '#FFFFFF',
     fontSize: 15,
   },
   errorText: {
-    color: '#FF007A',
     fontSize: 12,
     marginTop: 4,
   },

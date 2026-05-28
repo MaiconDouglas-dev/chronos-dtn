@@ -8,7 +8,7 @@ const RootLayoutContent = () => {
   const { isLoading, globalError, setGlobalError } = useApp();
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0B0E1B' }}>
+    <View style={{ flex: 1, backgroundColor: '#000000' }}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
       </Stack>
@@ -38,21 +38,18 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   errorBanner: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 90,
     left: 16,
     right: 16,
-    backgroundColor: 'rgba(255, 0, 122, 0.95)',
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: 'rgba(255, 69, 58, 0.95)', // iOS Red with translucency
+    borderRadius: 12,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     zIndex: 9999,
-    shadowColor: '#FF007A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 69, 58, 0.2)',
   },
   errorText: {
     color: '#FFFFFF',

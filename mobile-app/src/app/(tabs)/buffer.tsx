@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { useApp } from '../../services/AppContext';
 import { api } from '../../services/api';
 import SpaceBackground from '../../components/SpaceBackground';
 import SpaceCard from '../../components/SpaceCard';
 import SpaceButton from '../../components/SpaceButton';
 import Header from '../../components/Header';
-import { Layers, Send, RefreshCw, AlertTriangle, CheckCircle, ShieldAlert } from 'lucide-react-native';
+import { Layers, Send, RefreshCw, AlertTriangle, CheckCircle, ShieldAlert, Cpu } from 'lucide-react-native';
 
 interface DtnBundle {
   id: number;
@@ -26,7 +26,7 @@ interface ParsedMetadata {
 }
 
 export default function DtnBuffer() {
-  const { setGlobalError, setIsLoading } = useApp();
+  const { colors, temaAtivo, setGlobalError, setIsLoading } = useApp();
   const [queue, setQueue] = useState<DtnBundle[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSimulated, setIsSimulated] = useState(false);
@@ -148,8 +148,7 @@ export default function DtnBuffer() {
       if (res && (res.status === 200 || res.status === 204 || res.data)) {
         await fetchQueue();
       } else {
-        // Mock transmission locally
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 1200));
         setQueue(prev =>
           prev.map(b =>
             b.id === bundleId
@@ -159,8 +158,7 @@ export default function DtnBuffer() {
         );
       }
     } catch (err) {
-      // Mock local fallback
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1200));
       setQueue(prev =>
         prev.map(b =>
           b.id === bundleId
@@ -180,13 +178,11 @@ export default function DtnBuffer() {
       if (res && (res.status === 200 || res.status === 204 || res.data)) {
         await fetchQueue();
       } else {
-        // Mock transmission locally
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
         setQueue([]);
       }
     } catch (err) {
-      // Mock local fallback
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       setQueue([]);
     } finally {
       setIsLoading(false);
@@ -213,6 +209,7 @@ export default function DtnBuffer() {
   };
 
   const totalPayloadSize = queue.reduce((sum, item) => sum + Number(item.tamanhoKb), 0);
+  const styles = getStyles(colors, temaAtivo);
 
   return (
     <SpaceBackground scrollable={false}>
@@ -221,13 +218,13 @@ export default function DtnBuffer() {
       {/* Mode Indicator */}
       {isSimulated && (
         <View style={styles.simulationBanner}>
-          <ShieldAlert color="#FFB300" size={16} style={{ marginRight: 6 }} />
+          <ShieldAlert color={colors.orange} size={16} style={{ marginRight: 6 }} />
           <Text style={styles.simulationText}>Modo de Fila Simulada (Cache Local Offline)</Text>
         </View>
       )}
 
       {/* Overview Card */}
-      <SpaceCard borderAccent="amber" style={styles.overviewCard}>
+      <SpaceCard style={styles.overviewCard}>
         <View style={styles.overviewHeader}>
           <View>
             <Text style={styles.overviewLabel}>Capacidade do Buffer DTN</Text>
@@ -245,6 +242,77 @@ export default function DtnBuffer() {
             </Text>
           </View>
         </View>
+
+        {/* MAPA DE ALOCAÇÃO DE MEMÓRIA (Grid de 20 slots) */}
+        <View style={styles.bufferGridSection}>
+          <View style={styles.gridHeaderRow}>
+            <Cpu color={colors.textSecondary} size={12} style={{ marginRight: 4 }} />
+            <Text style={styles.gridTitle}>MAPA FÍSICO DE ALOCAÇÃO DE BUFFER (20 SLOTS)</Text>
+          </View>
+          
+          <View style={styles.gridContainer}>
+            {Array.from({ length: 20 }).map((_, index) => {
+              const packet = queue[index];
+              let cellBg = colors.inputBackground;
+              let isOccupied = !!packet;
+              
+              if (packet) {
+                const meta = parseMetadata(packet.metadataPacote);
+                const isRetrying = packet.statusTransmissao === 'RETRYING' || packet.statusTransmissao === 'TENTANDO';
+                const isInTransit = packet.statusTransmissao === 'IN_TRANSIT' || packet.statusTransmissao === 'EM_TRANSITO';
+                const isHigh = meta.prioridade === 'HIGH' || meta.prioridade === 'ALTA';
+                
+                if (isHigh) {
+                  cellBg = colors.red;
+                } else if (isRetrying) {
+                  cellBg = colors.orange;
+                } else if (isInTransit) {
+                  cellBg = colors.accent;
+                } else {
+                  cellBg = colors.purple;
+                }
+              }
+              
+              return (
+                <View 
+                  key={index} 
+                  style={[
+                    styles.gridCell, 
+                    isOccupied ? { backgroundColor: cellBg, borderColor: cellBg } : { backgroundColor: colors.inputBackground }
+                  ]}
+                >
+                  <Text style={[styles.gridCellText, isOccupied && styles.gridCellTextOccupied]}>
+                    {isOccupied ? `${packet.id}` : ''}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+          
+          {/* Legenda do Mapa */}
+          <View style={styles.legendContainer}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendIndicator, { backgroundColor: colors.purple }]} />
+              <Text style={styles.legendText}>Fila</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendIndicator, { backgroundColor: colors.accent }]} />
+              <Text style={styles.legendText}>Transito</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendIndicator, { backgroundColor: colors.orange }]} />
+              <Text style={styles.legendText}>Reenvio</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendIndicator, { backgroundColor: colors.red }]} />
+              <Text style={styles.legendText}>Crítico</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendIndicator, { backgroundColor: colors.inputBackground }]} />
+              <Text style={styles.legendText}>Livre</Text>
+            </View>
+          </View>
+        </View>
         
         <View style={styles.overviewActions}>
           <SpaceButton
@@ -255,14 +323,14 @@ export default function DtnBuffer() {
             style={styles.transmitAllBtn}
           />
           <TouchableOpacity onPress={fetchQueue} style={styles.refreshBtn} disabled={loading}>
-            {loading ? <ActivityIndicator size="small" color="#FFFFFF" /> : <RefreshCw color="#FFFFFF" size={16} />}
+            {loading ? <ActivityIndicator size="small" color={colors.text} /> : <RefreshCw color={colors.text} size={16} />}
           </TouchableOpacity>
         </View>
       </SpaceCard>
 
       {/* Queue Header Title */}
       <View style={styles.queueHeader}>
-        <Layers color="#94A3B8" size={18} style={{ marginRight: 6 }} />
+        <Layers color={colors.textSecondary} size={18} style={{ marginRight: 6 }} />
         <Text style={styles.queueTitle}>Pacotes no Buffer de Retenção</Text>
       </View>
 
@@ -271,9 +339,10 @@ export default function DtnBuffer() {
         data={queue}
         keyExtractor={(item) => item.id.toString()}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <CheckCircle color="#00F5A0" size={48} />
+            <CheckCircle color={colors.green} size={48} />
             <Text style={styles.emptyText}>Fila de buffer vazia. Todos os pacotes foram roteados!</Text>
           </View>
         }
@@ -283,35 +352,41 @@ export default function DtnBuffer() {
           const isInTransit = item.statusTransmissao === 'IN_TRANSIT' || item.statusTransmissao === 'EM_TRANSITO';
           const isQueued = item.statusTransmissao === 'QUEUED' || item.statusTransmissao === 'AGUARDANDO';
 
-          let statusAccent: 'cyan' | 'amber' | 'purple' | 'magenta' = 'cyan';
+          let statusAccent = colors.accent;
           let statusText = item.statusTransmissao;
+          let badgeBg = `${colors.accent}15`;
 
           if (isQueued) {
-            statusAccent = 'purple';
+            statusAccent = colors.purple;
             statusText = 'AGUARDANDO';
+            badgeBg = `${colors.purple}15`;
           } else if (isInTransit) {
-            statusAccent = 'cyan';
+            statusAccent = colors.accent;
             statusText = 'EM TRÂNSITO';
+            badgeBg = `${colors.accent}15`;
           } else if (isRetrying) {
-            statusAccent = 'amber';
+            statusAccent = colors.orange;
             statusText = 'REPETINDO';
+            badgeBg = `${colors.orange}15`;
           } else if (item.statusTransmissao === 'EXPIRED' || item.statusTransmissao === 'EXPIRADO') {
-            statusAccent = 'magenta';
+            statusAccent = colors.red;
             statusText = 'EXPIRADO';
+            badgeBg = `${colors.red}15`;
           } else if (item.statusTransmissao === 'DELIVERED' || item.statusTransmissao === 'ENTREGUE') {
-            statusAccent = 'cyan';
+            statusAccent = colors.green;
             statusText = 'ENTREGUE';
+            badgeBg = `${colors.green}15`;
           }
 
           return (
-            <SpaceCard borderAccent={statusAccent} style={styles.bundleCard}>
+            <SpaceCard style={styles.bundleCard}>
               <View style={styles.bundleHeader}>
                 <View style={styles.bundleDestGroup}>
                   <Text style={styles.bundleDestLabel}>Endpoint de Destino</Text>
                   <Text style={styles.bundleDestText} numberOfLines={1}>{meta.destino || 'dtn://unknown'}</Text>
                 </View>
-                <View style={[styles.statusBadge, { backgroundColor: isQueued ? '#8A57FF15' : isRetrying ? '#FFB30015' : '#00F2FE15' }]}>
-                  <Text style={[styles.statusText, { color: isQueued ? '#8A57FF' : isRetrying ? '#FFB300' : '#00F2FE' }]}>
+                <View style={[styles.statusBadge, { backgroundColor: badgeBg }]}>
+                  <Text style={[styles.statusText, { color: statusAccent }]}>
                     {statusText}
                   </Text>
                 </View>
@@ -325,7 +400,7 @@ export default function DtnBuffer() {
                 </View>
                 <View style={styles.metaCol}>
                   <Text style={styles.metaLabel}>Prioridade</Text>
-                  <Text style={[styles.metaValue, (meta.prioridade === 'HIGH' || meta.prioridade === 'ALTA') && { color: '#FF007A' }]}>
+                  <Text style={[styles.metaValue, (meta.prioridade === 'HIGH' || meta.prioridade === 'ALTA') && { color: colors.red }]}>
                     {meta.prioridade || 'NORMAL'}
                   </Text>
                 </View>
@@ -351,15 +426,15 @@ export default function DtnBuffer() {
               <View style={styles.bundleActions}>
                 {item.tentativas >= 3 && (
                   <View style={styles.warningContainer}>
-                    <AlertTriangle color="#FFB300" size={14} style={{ marginRight: 4 }} />
-                    <Text style={styles.warningText}>Aviso: limite de tentativas</Text>
+                    <AlertTriangle color={colors.orange} size={14} style={{ marginRight: 4 }} />
+                    <Text style={styles.warningText}>Limite de tentativas atingido</Text>
                   </View>
                 )}
                 <TouchableOpacity 
                   style={styles.transmitBtn} 
                   onPress={() => handleTransmitSingle(item.id)}
                 >
-                  <Send color="#00F2FE" size={14} style={{ marginRight: 6 }} />
+                  <Send color={colors.accent} size={14} style={{ marginRight: 6 }} />
                   <Text style={styles.transmitBtnText}>Forçar Roteamento</Text>
                 </TouchableOpacity>
               </View>
@@ -371,189 +446,263 @@ export default function DtnBuffer() {
   );
 }
 
-const styles = StyleSheet.create({
-  simulationBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFB30015',
-    borderWidth: 1,
-    borderColor: '#FFB30040',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 16,
-  },
-  simulationText: {
-    color: '#FFB300',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  overviewCard: {
-    padding: 14,
-    marginBottom: 16,
-  },
-  overviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  overviewLabel: {
-    color: '#64748B',
-    fontSize: 11,
-    marginBottom: 4,
-  },
-  overviewValue: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  overviewSub: {
-    fontSize: 12,
-    color: '#94A3B8',
-    fontWeight: 'normal',
-  },
-  verticalSeparator: {
-    width: 1,
-    height: 40,
-    backgroundColor: '#232A46',
-  },
-  overviewActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  transmitAllBtn: {
-    flex: 1,
-    height: 40,
-  },
-  refreshBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: '#1E2540',
-    borderWidth: 1,
-    borderColor: '#232A46',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 10,
-  },
-  queueHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  queueTitle: {
-    color: '#94A3B8',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 100,
-  },
-  emptyText: {
-    color: '#64748B',
-    fontSize: 14,
-    marginTop: 12,
-  },
-  bundleCard: {
-    padding: 12,
-    marginBottom: 12,
-  },
-  bundleHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 10,
-  },
-  bundleDestGroup: {
-    flex: 1,
-    paddingRight: 10,
-  },
-  bundleDestLabel: {
-    color: '#64748B',
-    fontSize: 9,
-    marginBottom: 2,
-  },
-  bundleDestText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#0A0D1A',
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#181E35',
-  },
-  metaCol: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  metaLabel: {
-    color: '#64748B',
-    fontSize: 9,
-    marginBottom: 2,
-  },
-  metaValue: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  detailsBlock: {
-    backgroundColor: '#0F1322',
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 10,
-  },
-  detailLabel: {
-    color: '#64748B',
-    fontSize: 9,
-    fontWeight: '500',
-  },
-  detailVal: {
-    color: '#94A3B8',
-    fontSize: 10,
-    fontFamily: 'monospace',
-    marginBottom: 6,
-  },
-  bundleActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#1E2540',
-    paddingTop: 10,
-  },
-  warningContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  warningText: {
-    color: '#FFB300',
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  transmitBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 'auto',
-    paddingVertical: 4,
-  },
-  transmitBtnText: {
-    color: '#00F2FE',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-});
+const getStyles = (colors: any, temaAtivo: 'light' | 'dark') => {
+  const isDark = temaAtivo === 'dark';
+  return StyleSheet.create({
+    simulationBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: `${colors.orange}15`,
+      borderWidth: 1,
+      borderColor: `${colors.orange}30`,
+      borderRadius: 10,
+      padding: 10,
+      marginBottom: 16,
+    },
+    simulationText: {
+      color: colors.orange,
+      fontSize: 12,
+      fontWeight: '500',
+    },
+    overviewCard: {
+      padding: 16,
+      marginBottom: 16,
+    },
+    overviewHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    overviewLabel: {
+      color: colors.textSecondary,
+      fontSize: 11,
+      marginBottom: 4,
+    },
+    overviewValue: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+    overviewSub: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: 'normal',
+    },
+    verticalSeparator: {
+      width: 1,
+      height: 40,
+      backgroundColor: colors.border,
+    },
+    bufferGridSection: {
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      padding: 12,
+      backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)',
+    },
+    gridHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    gridTitle: {
+      color: colors.textSecondary,
+      fontSize: 9,
+      fontWeight: 'bold',
+      letterSpacing: 0.5,
+    },
+    gridContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      marginBottom: 10,
+    },
+    gridCell: {
+      width: '8%', // fits 10 cells nicely with spacing
+      height: 24,
+      borderRadius: 4,
+      borderWidth: 1,
+      borderColor: colors.border,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    gridCellText: {
+      fontSize: 7,
+      color: colors.textSecondary,
+    },
+    gridCellTextOccupied: {
+      color: '#FFFFFF',
+      fontWeight: 'bold',
+      fontSize: 8,
+    },
+    legendContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 4,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 8,
+    },
+    legendItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    legendIndicator: {
+      width: 8,
+      height: 8,
+      borderRadius: 2,
+      marginRight: 4,
+    },
+    legendText: {
+      color: colors.textSecondary,
+      fontSize: 8,
+      fontWeight: '500',
+    },
+    overviewActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    transmitAllBtn: {
+      flex: 1,
+      height: 40,
+    },
+    refreshBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      backgroundColor: colors.inputBackground,
+      borderWidth: 1,
+      borderColor: colors.border,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginLeft: 10,
+    },
+    queueHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    queueTitle: {
+      color: colors.textSecondary,
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+    emptyContainer: {
+      alignItems: 'center',
+      paddingVertical: 100,
+    },
+    emptyText: {
+      color: colors.textSecondary,
+      fontSize: 14,
+      marginTop: 12,
+      textAlign: 'center',
+      paddingHorizontal: 24,
+    },
+    bundleCard: {
+      padding: 14,
+      marginBottom: 12,
+    },
+    bundleHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 10,
+    },
+    bundleDestGroup: {
+      flex: 1,
+      paddingRight: 10,
+    },
+    bundleDestLabel: {
+      color: colors.textSecondary,
+      fontSize: 9,
+      marginBottom: 2,
+    },
+    bundleDestText: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: 'bold',
+    },
+    statusBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+    },
+    statusText: {
+      fontSize: 10,
+      fontWeight: 'bold',
+    },
+    metaRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      backgroundColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.03)',
+      borderRadius: 10,
+      padding: 8,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    metaCol: {
+      alignItems: 'center',
+      flex: 1,
+    },
+    metaLabel: {
+      color: colors.textSecondary,
+      fontSize: 9,
+      marginBottom: 2,
+    },
+    metaValue: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    detailsBlock: {
+      backgroundColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.03)',
+      borderRadius: 10,
+      padding: 8,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    detailLabel: {
+      color: colors.textSecondary,
+      fontSize: 9,
+      fontWeight: '500',
+    },
+    detailVal: {
+      color: colors.textSecondary,
+      fontSize: 10,
+      fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+      marginBottom: 6,
+    },
+    bundleActions: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 10,
+    },
+    warningContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    warningText: {
+      color: colors.orange,
+      fontSize: 11,
+      fontWeight: '500',
+    },
+    transmitBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginLeft: 'auto',
+      paddingVertical: 4,
+    },
+    transmitBtnText: {
+      color: colors.accent,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+  });
+};

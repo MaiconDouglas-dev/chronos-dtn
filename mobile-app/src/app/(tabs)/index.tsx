@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, FlatList, Dimensions, Platform } from 'react-native';
 import { useApp } from '../../services/AppContext';
 import { api } from '../../services/api';
 import SpaceBackground from '../../components/SpaceBackground';
 import SpaceCard from '../../components/SpaceCard';
 import Header from '../../components/Header';
-import { RefreshCw, Radio, ShieldAlert, Cpu, Database, Compass } from 'lucide-react-native';
+import { RefreshCw, ShieldAlert, Cpu, Database, Signal, Activity } from 'lucide-react-native';
+import Svg, { Path, Circle, Defs, LinearGradient, Stop, Line } from 'react-native-svg';
+
+const { width } = Dimensions.get('window');
 
 interface Node {
   id: number;
@@ -17,19 +20,20 @@ interface Node {
 }
 
 export default function Dashboard() {
-  const { tokenJwt, setGlobalError } = useApp();
+  const { tokenJwt, setGlobalError, colors, temaAtivo } = useApp();
   const [nodes, setNodes] = useState<Node[]>([]);
   const [dtnCount, setDtnCount] = useState(0);
   const [auditCount, setAuditCount] = useState(0);
   const [isSimulated, setIsSimulated] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Mock data fallbacks
+  const styles = getStyles(colors);
+
   const mockNodes: Node[] = [
-    { id: 1, nome: 'LunaPath-1 (Relay Orbital)', latenciaTerraMs: 1320, latenciaLuaMs: 8, status: 'ONLINE', throughputKbps: 25600 },
-    { id: 2, nome: 'LOP-G Gateway Comms', latenciaTerraMs: 1280, latenciaLuaMs: 5, status: 'ONLINE', throughputKbps: 102400 },
-    { id: 3, nome: 'Shackleton Surface Base', latenciaTerraMs: 1410, latenciaLuaMs: 2, status: 'DEGRADED', throughputKbps: 512 },
-    { id: 4, nome: 'LunaRelay-4 (Lado Oculto)', latenciaTerraMs: 1550, latenciaLuaMs: 15, status: 'ONLINE', throughputKbps: 4096 },
+    { id: 1, nome: 'LunaPath-1 (Orbital)', latenciaTerraMs: 1320, latenciaLuaMs: 8, status: 'ONLINE', throughputKbps: 25600 },
+    { id: 2, nome: 'LOP-G Gateway', latenciaTerraMs: 1280, latenciaLuaMs: 5, status: 'ONLINE', throughputKbps: 102400 },
+    { id: 3, nome: 'Shackleton Surface', latenciaTerraMs: 1410, latenciaLuaMs: 2, status: 'DEGRADED', throughputKbps: 512 },
+    { id: 4, nome: 'LunaRelay-4 (Oculto)', latenciaTerraMs: 1550, latenciaLuaMs: 15, status: 'ONLINE', throughputKbps: 4096 },
   ];
 
   const normalizeNode = (data: any): Node => {
@@ -51,7 +55,7 @@ export default function Dashboard() {
           return res;
         }
       } catch (err) {
-        // continue trying next
+        // continue
       }
     }
     throw new Error('Todos os endpoints falharam');
@@ -60,7 +64,6 @@ export default function Dashboard() {
   const fetchData = async () => {
     setRefreshing(true);
     try {
-      // Attempt to load from real backend APIs sequentially
       const [nodesRes, bundlesRes, auditsRes] = await Promise.all([
         executeSequential(['/nos', '/nosatelite', '/nodes']).catch(() => null),
         executeSequential(['/pacotes', '/filadtn', '/dtn/queue']).catch(() => null),
@@ -80,14 +83,14 @@ export default function Dashboard() {
         const rawList = Array.isArray(bundlesRes.data) ? bundlesRes.data : [];
         setDtnCount(rawList.length);
       } else {
-        setDtnCount(3); // Mock initial state
+        setDtnCount(3);
       }
 
       if (auditsRes && auditsRes.data) {
         const rawList = Array.isArray(auditsRes.data) ? auditsRes.data : [];
         setAuditCount(rawList.length);
       } else {
-        setAuditCount(4); // Mock initial state
+        setAuditCount(4);
       }
     } catch (err) {
       setNodes(mockNodes);
@@ -105,64 +108,123 @@ export default function Dashboard() {
 
   const getSignalStrength = () => {
     const onlineCount = nodes.filter(n => n.status === 'ONLINE').length;
-    if (onlineCount === 0) return { pct: 0, text: 'DESCONECTADO', color: '#FF007A' };
-    if (onlineCount === 1) return { pct: 25, text: 'CRÍTICO', color: '#FF007A' };
-    if (onlineCount === 2) return { pct: 50, text: 'FRACO', color: '#FFB300' };
-    if (onlineCount === 3) return { pct: 75, text: 'ESTÁVEL', color: '#00F2FE' };
-    return { pct: 98, text: 'EXCELENTE', color: '#00F5A0' };
+    if (onlineCount === 0) return { pct: 0, text: 'DESCONECTADO', color: colors.red };
+    if (onlineCount === 1) return { pct: 25, text: 'CRÍTICO', color: colors.red };
+    if (onlineCount === 2) return { pct: 50, text: 'FRACO', color: colors.orange };
+    if (onlineCount === 3) return { pct: 75, text: 'ESTÁVEL', color: colors.accent };
+    return { pct: 98, text: 'EXCELENTE', color: colors.green };
   };
 
   const signal = getSignalStrength();
+
+  const avgLatency = nodes.length > 0 
+    ? (nodes.reduce((acc, curr) => acc + curr.latenciaTerraMs, 0) / nodes.length)
+    : 1390;
 
   return (
     <SpaceBackground scrollable>
       <Header />
 
-      {/* Mode Indicator */}
       {isSimulated && (
         <View style={styles.simulationBanner}>
-          <ShieldAlert color="#FFB300" size={16} style={{ marginRight: 6 }} />
-          <Text style={styles.simulationText}>Modo de Telemetria Simulada (Cache Local Offline)</Text>
+          <ShieldAlert color={colors.orange} size={14} style={{ marginRight: 6 }} />
+          <Text style={styles.simulationText}>Modo Offline Simulador (Operação Local)</Text>
         </View>
       )}
 
-      {/* Header telemetry values */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Métricas de Link</Text>
+        <TouchableOpacity style={styles.syncBtn} onPress={fetchData} disabled={refreshing}>
+          {refreshing ? <ActivityIndicator size="small" color={colors.accent} /> : <RefreshCw color={colors.textSecondary} size={14} />}
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.metricsRow}>
         <SpaceCard style={styles.metricCard} borderAccent="cyan">
           <View style={styles.cardHeader}>
-            <Radio color="#00F2FE" size={20} />
-            <Text style={styles.metricTitle}>Sinal</Text>
+            <Signal color={colors.accent} size={14} />
+            <Text style={styles.metricTitle}>SINAL DE REDE</Text>
           </View>
-          <Text style={[styles.metricValue, { color: signal.color }]}>{signal.pct}%</Text>
-          <Text style={styles.metricSub}>{signal.text}</Text>
+          <View style={styles.signalContainer}>
+            <View style={styles.signalTextCol}>
+              <Text style={[styles.metricValue, { color: signal.color }]}>{signal.pct}%</Text>
+              <Text style={styles.metricSub}>{signal.text}</Text>
+            </View>
+            
+            <View style={styles.svgSignalWrapper}>
+              <Svg width={54} height={54} viewBox="0 0 80 80">
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const angle = (i * 360) / 12;
+                  const isLit = (i / 12) * 100 < signal.pct;
+                  const r1 = 26;
+                  const r2 = 34;
+                  const rad = (angle * Math.PI) / 180;
+                  const x1 = 40 + r1 * Math.cos(rad);
+                  const y1 = 40 + r1 * Math.sin(rad);
+                  const x2 = 40 + r2 * Math.cos(rad);
+                  const y2 = 40 + r2 * Math.sin(rad);
+                  return (
+                    <Line
+                      key={i}
+                      x1={x1}
+                      y1={y1}
+                      x2={x2}
+                      y2={y2}
+                      stroke={isLit ? signal.color : colors.border}
+                      strokeWidth={3.5}
+                      strokeLinecap="round"
+                    />
+                  );
+                })}
+                <Circle cx="40" cy="40" r="18" fill="none" stroke={colors.border} strokeWidth={1} />
+                <Circle cx="40" cy="40" r="6" fill={signal.color} />
+              </Svg>
+            </View>
+          </View>
         </SpaceCard>
 
         <SpaceCard style={styles.metricCard} borderAccent="purple">
           <View style={styles.cardHeader}>
-            <Compass color="#8A57FF" size={20} />
-            <Text style={styles.metricTitle}>Desvio Rel.</Text>
+            <Activity color={colors.purple} size={14} />
+            <Text style={styles.metricTitle}>RTT MÉDIO (TERRA)</Text>
           </View>
-          <Text style={styles.metricValue}>+56.2</Text>
-          <Text style={styles.metricSub}>μs/dia (LTC vs UTC)</Text>
+          <View style={styles.latencyContainer}>
+            <Text style={styles.metricValue}>{avgLatency.toFixed(0)} <Text style={styles.metricUnit}>ms</Text></Text>
+            
+            <View style={styles.svgWaveformWrapper}>
+              <Svg width="100%" height={32} viewBox="0 0 120 40" preserveAspectRatio="none">
+                <Defs>
+                  <LinearGradient id="waveGrad" x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0%" stopColor={colors.purple} stopOpacity={0.3} />
+                    <Stop offset="100%" stopColor={colors.purple} stopOpacity={0.0} />
+                  </LinearGradient>
+                </Defs>
+                <Path
+                  d="M 0 32 C 15 32, 20 8, 35 8 C 50 8, 55 24, 70 24 C 85 24, 90 4, 105 4 L 120 18 L 120 40 L 0 40 Z"
+                  fill="url(#waveGrad)"
+                />
+                <Path
+                  d="M 0 32 C 15 32, 20 8, 35 8 C 50 8, 55 24, 70 24 C 85 24, 90 4, 105 4 L 120 18"
+                  fill="none"
+                  stroke={colors.purple}
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                />
+                <Circle cx="120" cy="18" r="3" fill={colors.purple} />
+                <Circle cx="120" cy="18" r="6" fill={colors.purple} opacity={0.25} />
+              </Svg>
+            </View>
+          </View>
         </SpaceCard>
       </View>
 
-      {/* DTN Queue State */}
       <SpaceCard borderAccent="amber" style={styles.bufferCard}>
         <View style={styles.bufferHeader}>
-          <View style={styles.bufferTitleContainer}>
-            <Database color="#FFB300" size={20} style={{ marginRight: 8 }} />
-            <Text style={styles.bufferMainTitle}>Buffer Interplanetário DTN</Text>
-          </View>
-          <TouchableOpacity onPress={fetchData} disabled={refreshing}>
-            {refreshing ? (
-              <ActivityIndicator size="small" color="#FFB300" />
-            ) : (
-              <RefreshCw color="#94A3B8" size={16} />
-            )}
-          </TouchableOpacity>
+          <Database color={colors.orange} size={18} style={{ marginRight: 8 }} />
+          <Text style={styles.bufferMainTitle}>Capacidade do Buffer Cislunar</Text>
         </View>
-        <View style={styles.bufferBody}>
+        
+        <View style={styles.bufferGrid}>
           <View style={styles.bufferInfoBlock}>
             <Text style={styles.bufferValText}>{dtnCount}</Text>
             <Text style={styles.bufferLabelText}>Pacotes Retidos</Text>
@@ -170,73 +232,115 @@ export default function Dashboard() {
           <View style={styles.bufferDivider} />
           <View style={styles.bufferInfoBlock}>
             <Text style={styles.bufferValText}>{auditCount}</Text>
-            <Text style={styles.bufferLabelText}>Transações Auditadas</Text>
+            <Text style={styles.bufferLabelText}>Auditorias Registradas</Text>
           </View>
         </View>
+
         <View style={styles.progressContainer}>
           <View style={styles.progressBarBg}>
             <View style={[styles.progressBarFill, { width: `${Math.min((dtnCount / 20) * 100, 100)}%` }]} />
           </View>
-          <Text style={styles.progressLabel}>Capacidade do buffer: {dtnCount}/20 pacotes</Text>
+          <Text style={styles.progressLabel}>Capacidade em uso: {dtnCount}/20 pacotes (DTN)</Text>
         </View>
       </SpaceCard>
 
-      {/* Satellite Connectivity Nodes list */}
       <View style={styles.sectionHeader}>
-        <Cpu color="#94A3B8" size={18} style={{ marginRight: 6 }} />
-        <Text style={styles.sectionTitle}>Relés de Conectividade ({nodes.length})</Text>
+        <View style={styles.sectionTitleRow}>
+          <Cpu color={colors.accent} size={16} style={{ marginRight: 6 }} />
+          <Text style={styles.sectionTitle}>Conectividade de Satélites</Text>
+        </View>
+        <Text style={styles.sectionHelper}>Arraste para o lado</Text>
       </View>
 
-      {nodes.map((node) => {
-        const isOnline = node.status === 'ONLINE';
-        const isDegraded = node.status === 'DEGRADED';
-        const statusAccent = isOnline ? 'green' : isDegraded ? 'amber' : 'magenta';
-        const statusLabel = isOnline ? 'ONLINE' : isDegraded ? 'DEGRADADO' : 'OFFLINE';
+      <FlatList
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        data={nodes}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.carouselContainer}
+        snapToAlignment="start"
+        snapToInterval={276}
+        decelerationRate="fast"
+        renderItem={({ item }) => {
+          const isOnline = item.status === 'ONLINE';
+          const isDegraded = item.status === 'DEGRADED';
+          const statusAccent = isOnline ? 'green' : isDegraded ? 'amber' : 'magenta';
+          const statusColor = isOnline ? colors.green : isDegraded ? colors.orange : colors.red;
 
-        return (
-          <SpaceCard key={node.id} borderAccent={statusAccent} style={styles.nodeItem}>
-            <View style={styles.nodeMainRow}>
-              <View>
-                <Text style={styles.nodeName}>{node.nome}</Text>
-                <Text style={styles.nodeThroughput}>{(node.throughputKbps / 1024).toFixed(1)} Mbps Taxa Máx</Text>
+          return (
+            <SpaceCard key={item.id} borderAccent={statusAccent} style={styles.carouselCard}>
+              <View style={styles.carouselCardHeader}>
+                <View style={[styles.statusIndicator, { backgroundColor: statusColor }]} />
+                <Text style={styles.nodeName} numberOfLines={1}>{item.nome}</Text>
               </View>
-              <View style={[styles.statusBadge, { backgroundColor: isOnline ? '#05C18020' : isDegraded ? '#FFB30020' : '#FF007A20' }]}>
-                <Text style={[styles.statusText, { color: isOnline ? '#00F5A0' : isDegraded ? '#FFB300' : '#FF007A' }]}>{statusLabel}</Text>
+
+              <View style={styles.carouselCardMetric}>
+                <Text style={styles.carouselRateVal}>{(item.throughputKbps / 1024).toFixed(1)}</Text>
+                <Text style={styles.carouselRateLabel}>Mbps Taxa Máxima</Text>
               </View>
-            </View>
-            <View style={styles.latencySplit}>
-              <View style={styles.latencyItem}>
-                <Text style={styles.latencyLabel}>Atraso RTT Terra</Text>
-                <Text style={styles.latencyValue}>{node.latenciaTerraMs} ms</Text>
+
+              <View style={styles.dividerHorizontal} />
+
+              <View style={styles.carouselLatencyRow}>
+                <View style={styles.carouselLatencyCol}>
+                  <Text style={styles.latencyLabel}>RTT Terra</Text>
+                  <Text style={styles.latencyVal}>{item.latenciaTerraMs} ms</Text>
+                </View>
+                <View style={styles.dividerVertical} />
+                <View style={styles.carouselLatencyCol}>
+                  <Text style={styles.latencyLabel}>RTT Lua</Text>
+                  <Text style={styles.latencyVal}>{item.latenciaLuaMs} ms</Text>
+                </View>
               </View>
-              <View style={styles.verticalSplitLine} />
-              <View style={styles.latencyItem}>
-                <Text style={styles.latencyLabel}>Atraso RTT Órbita Lua</Text>
-                <Text style={styles.latencyValue}>{node.latenciaLuaMs} ms</Text>
-              </View>
-            </View>
-          </SpaceCard>
-        );
-      })}
+            </SpaceCard>
+          );
+        }}
+      />
+      <View style={{ height: 100 }} />
     </SpaceBackground>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   simulationBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFB30015',
+    backgroundColor: colors.statusBannerBg,
     borderWidth: 1,
-    borderColor: '#FFB30040',
-    borderRadius: 8,
+    borderColor: colors.statusBannerBorder,
+    borderRadius: 12,
     padding: 10,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   simulationText: {
-    color: '#FFB300',
-    fontSize: 12,
+    color: colors.orange,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  sectionHelper: {
+    color: colors.textSecondary,
+    fontSize: 10,
     fontWeight: '500',
+  },
+  syncBtn: {
+    padding: 4,
   },
   metricsRow: {
     flexDirection: 'row',
@@ -246,157 +350,195 @@ const styles = StyleSheet.create({
   metricCard: {
     flex: 1,
     marginHorizontal: 4,
-    minHeight: 110,
+    minHeight: 120,
+    padding: 12,
+    borderRadius: 16,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   metricTitle: {
-    color: '#94A3B8',
-    fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 6,
+    color: colors.textSecondary,
+    fontSize: 8,
+    fontWeight: 'bold',
+    marginLeft: 4,
+    letterSpacing: 0.5,
   },
   metricValue: {
-    color: '#FFFFFF',
-    fontSize: 24,
+    color: colors.text,
+    fontSize: 20,
     fontWeight: 'bold',
   },
+  metricUnit: {
+    fontSize: 12,
+    fontWeight: 'normal',
+    color: colors.textSecondary,
+  },
   metricSub: {
-    color: '#64748B',
-    fontSize: 10,
+    color: colors.textSecondary,
+    fontSize: 9,
     marginTop: 2,
   },
-  bufferCard: {
-    marginBottom: 20,
-  },
-  bufferHeader: {
+  signalContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginTop: 4,
+    flex: 1,
   },
-  bufferTitleContainer: {
+  signalTextCol: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  svgSignalWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  latencyContainer: {
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    marginTop: 4,
+    flex: 1,
+  },
+  svgWaveformWrapper: {
+    marginTop: 8,
+    height: 32,
+    width: '100%',
+  },
+  bufferCard: {
+    marginBottom: 24,
+    padding: 16,
+    borderRadius: 16,
+  },
+  bufferHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingBottom: 10,
   },
   bufferMainTitle: {
-    color: '#FFFFFF',
-    fontSize: 15,
+    color: colors.text,
+    fontSize: 14,
     fontWeight: 'bold',
-    letterSpacing: 0.5,
   },
-  bufferBody: {
+  bufferGrid: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   bufferInfoBlock: {
     alignItems: 'center',
   },
   bufferValText: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 22,
     fontWeight: 'bold',
   },
   bufferLabelText: {
-    color: '#94A3B8',
-    fontSize: 11,
-    marginTop: 4,
+    color: colors.textSecondary,
+    fontSize: 10,
+    marginTop: 2,
   },
   bufferDivider: {
-    height: 30,
+    height: 32,
     width: 1,
-    backgroundColor: '#232A46',
+    backgroundColor: colors.border,
   },
   progressContainer: {
-    marginTop: 14,
+    marginTop: 16,
   },
   progressBarBg: {
     height: 6,
-    backgroundColor: '#0F1322',
+    backgroundColor: colors.inputBackground,
     borderRadius: 3,
     overflow: 'hidden',
     marginBottom: 6,
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#FFB300',
+    backgroundColor: colors.accent,
     borderRadius: 3,
   },
   progressLabel: {
-    color: '#64748B',
-    fontSize: 10,
+    color: colors.textSecondary,
+    fontSize: 9,
     textAlign: 'right',
   },
-  sectionHeader: {
+  carouselContainer: {
+    paddingLeft: 4,
+    paddingRight: 16,
+    paddingBottom: 16,
+  },
+  carouselCard: {
+    width: 260,
+    marginRight: 16,
+    padding: 14,
+    borderRadius: 20,
+    minHeight: 160,
+    borderWidth: 1,
+  },
+  carouselCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
-    marginTop: 8,
   },
-  sectionTitle: {
-    color: '#94A3B8',
-    fontSize: 14,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-  },
-  nodeItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginBottom: 10,
-  },
-  nodeMainRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+  statusIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
   },
   nodeName: {
-    color: '#FFFFFF',
-    fontSize: 14,
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  carouselCardMetric: {
+    marginBottom: 12,
+  },
+  carouselRateVal: {
+    color: colors.text,
+    fontSize: 28,
     fontWeight: 'bold',
   },
-  nodeThroughput: {
-    color: '#64748B',
-    fontSize: 11,
+  carouselRateLabel: {
+    color: colors.textSecondary,
+    fontSize: 10,
     marginTop: 2,
   },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+  dividerHorizontal: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: 10,
   },
-  statusText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-  },
-  latencySplit: {
+  carouselLatencyRow: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#1A213B',
-    paddingTop: 10,
-  },
-  latencyItem: {
-    flex: 1,
+    justifyContent: 'space-around',
     alignItems: 'center',
   },
+  carouselLatencyCol: {
+    alignItems: 'center',
+    flex: 1,
+  },
   latencyLabel: {
-    color: '#64748B',
-    fontSize: 10,
+    color: colors.textSecondary,
+    fontSize: 8,
     marginBottom: 2,
   },
-  latencyValue: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
+  latencyVal: {
+    color: colors.text,
+    fontSize: 11,
+    fontWeight: 'bold',
   },
-  verticalSplitLine: {
+  dividerVertical: {
     width: 1,
-    backgroundColor: '#1A213B',
+    height: 18,
+    backgroundColor: colors.border,
   },
 });

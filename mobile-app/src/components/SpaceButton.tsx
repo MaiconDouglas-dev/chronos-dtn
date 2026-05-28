@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, ActivityIndicator, ViewStyle, TextStyle, StyleProp } from 'react-native';
+import { useApp } from '../services/AppContext';
 
 interface SpaceButtonProps {
   title: string;
@@ -20,27 +21,29 @@ export const SpaceButton: React.FC<SpaceButtonProps> = ({
   style,
   textStyle,
 }) => {
+  const { colors } = useApp();
+
   const getStyles = () => {
     let btnStyle: ViewStyle = {};
     let txtStyle: TextStyle = { color: '#FFFFFF' };
 
     switch (variant) {
       case 'secondary':
-        btnStyle = { backgroundColor: '#00F2FE' };
-        txtStyle = { color: '#0B0E1B', fontWeight: 'bold' };
+        btnStyle = { backgroundColor: colors.inputBackground }; // iOS Secondary Button
+        txtStyle = { color: colors.text, fontWeight: '600' };
         break;
       case 'danger':
-        btnStyle = { backgroundColor: '#FF007A' };
-        txtStyle = { color: '#FFFFFF', fontWeight: 'bold' };
+        btnStyle = { backgroundColor: colors.red }; // iOS Red Button
+        txtStyle = { color: '#FFFFFF', fontWeight: '600' };
         break;
       case 'outline':
-        btnStyle = { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#8A57FF' };
-        txtStyle = { color: '#8A57FF', fontWeight: 'bold' };
+        btnStyle = { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border };
+        txtStyle = { color: colors.accent, fontWeight: '600' };
         break;
       case 'primary':
       default:
-        btnStyle = { backgroundColor: '#8A57FF' };
-        txtStyle = { color: '#FFFFFF', fontWeight: 'bold' };
+        btnStyle = { backgroundColor: colors.accent }; // iOS SF Blue Primary Button
+        txtStyle = { color: '#FFFFFF', fontWeight: '600' };
         break;
     }
 
@@ -61,7 +64,7 @@ export const SpaceButton: React.FC<SpaceButtonProps> = ({
       disabled={disabled || loading}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'secondary' ? '#0B0E1B' : '#FFFFFF'} size="small" />
+        <ActivityIndicator color={variant === 'outline' ? colors.accent : '#FFFFFF'} size="small" />
       ) : (
         <Text style={[styles.text, txtStyle, textStyle]}>{title}</Text>
       )}
@@ -80,7 +83,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 15,
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
   },
 });
 export default SpaceButton;

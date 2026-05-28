@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useApp } from '../../services/AppContext';
 import { api } from '../../services/api';
 import SpaceBackground from '../../components/SpaceBackground';
@@ -7,10 +7,14 @@ import SpaceCard from '../../components/SpaceCard';
 import SpaceInput from '../../components/SpaceInput';
 import SpaceButton from '../../components/SpaceButton';
 import Header from '../../components/Header';
-import { Shield, Key, Network, ShieldCheck, LogOut, CheckCircle2, AlertTriangle } from 'lucide-react-native';
+import { Shield, Key, Network, ShieldCheck, LogOut, CheckCircle2, AlertTriangle, Moon, Orbit, Sun, Monitor } from 'lucide-react-native';
 
 export default function Profile() {
   const {
+    colors,
+    tema,
+    temaAtivo,
+    setTema,
     urlServidor,
     tokenJwt,
     idOperador,
@@ -28,7 +32,6 @@ export default function Profile() {
   const [pingLatency, setPingLatency] = useState<number | null>(null);
   const [localLoading, setLocalLoading] = useState(false);
 
-  // Sync inputs with context updates
   useEffect(() => {
     setInputUrl(urlServidor);
   }, [urlServidor]);
@@ -38,7 +41,6 @@ export default function Profile() {
     setPingLatency(null);
     const start = Date.now();
     try {
-      // Try Java `/api/nos` endpoint first, then C# `/api/nosatelite`
       let res;
       try {
         res = await api.get('/nos', {
@@ -49,7 +51,6 @@ export default function Profile() {
         if (err.response) {
           res = err.response;
         } else {
-          // Try C# endpoint next
           try {
             res = await api.get('/nosatelite', {
               baseURL: urlToTest,
@@ -66,7 +67,6 @@ export default function Profile() {
       }
 
       const end = Date.now();
-      // If the server responded with 200/201, or returned 401/403/405 (means server is alive but requires auth), it is ONLINE
       if (res && (res.status === 200 || res.status === 201 || res.status === 401 || res.status === 403 || res.status === 405)) {
         setPingStatus('SUCCESS');
         setPingLatency(end - start);
@@ -110,7 +110,6 @@ export default function Profile() {
     setIsLoading(true);
     const codeUpper = operatorCode.trim().toUpperCase();
 
-    // Payload supports Java (username/password), C# (Usuario/Senha), and custom (codigo_registro/codigoRegistro)
     const payload = {
       username: codeUpper,
       Username: codeUpper,
@@ -125,7 +124,6 @@ export default function Profile() {
     };
 
     try {
-      // Try Java (/api/autenticacao/login) and .NET (/api/autenticacao/token) first, then fallback
       let res;
       try {
         res = await api.post('/autenticacao/login', payload);
@@ -153,12 +151,10 @@ export default function Profile() {
         setOperatorCode('');
         setOperatorPass('');
       } else {
-        // Mock authorization for seed codes
         await new Promise((resolve) => setTimeout(resolve, 800));
         mockLocalLogin(codeUpper);
       }
     } catch (err) {
-      // Mock local authorization if server fails
       await new Promise((resolve) => setTimeout(resolve, 800));
       mockLocalLogin(codeUpper);
     } finally {
@@ -186,49 +182,80 @@ export default function Profile() {
     setIsLoading(false);
   };
 
+  const styles = getStyles(colors, temaAtivo);
+
   return (
     <SpaceBackground scrollable>
       <Header />
 
       {/* Operator Session status card */}
       {tokenJwt ? (
-        <SpaceCard borderAccent="green" style={styles.sessionCard}>
-          <View style={styles.cardHeader}>
-            <ShieldCheck color="#00F5A0" size={24} style={{ marginRight: 10 }} />
-            <View>
-              <Text style={styles.operatorTitle}>Sessão de Operador Autorizada</Text>
-              <Text style={styles.operatorSubtitle}>Link Integrado NASA/ESA</Text>
-            </View>
+        <SpaceCard style={styles.badgeContainer}>
+          <View style={styles.badgeHeader}>
+            <Orbit color={colors.accent} size={16} style={{ marginRight: 6 }} />
+            <Text style={styles.badgeOrgText}>CISLUNAR COMMERCE CONSORTIUM</Text>
           </View>
 
-          <View style={styles.operatorDetails}>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Nome do Operador:</Text>
-              <Text style={styles.detailValue}>{nomeOperador}</Text>
+          <View style={styles.badgeBody}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatarRingOuter}>
+                <View style={styles.avatarRingInner}>
+                  <Moon color={colors.accent} size={32} />
+                </View>
+              </View>
+              <View style={styles.clearanceBadge}>
+                <Text style={styles.clearanceText}>ALFA-01</Text>
+              </View>
             </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>ID de Registro:</Text>
-              <Text style={styles.detailCode}>{idOperador}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Status do Token:</Text>
-              <View style={styles.badgeActive}>
-                <Text style={styles.badgeTextActive}>JWT ATIVO</Text>
+
+            <View style={styles.badgeInfoCol}>
+              <View style={styles.infoField}>
+                <Text style={styles.infoFieldLabel}>OPERADOR AUTORIZADO</Text>
+                <Text style={styles.infoFieldValName}>{nomeOperador}</Text>
+              </View>
+
+              <View style={styles.infoFieldRow}>
+                <View style={styles.infoFieldHalf}>
+                  <Text style={styles.infoFieldLabel}>CÓDIGO ID</Text>
+                  <Text style={styles.infoFieldValCode}>{idOperador}</Text>
+                </View>
+                <View style={styles.infoFieldHalf}>
+                  <Text style={styles.infoFieldLabel}>LINK GATEWAY</Text>
+                  <Text style={styles.infoFieldVal} numberOfLines={1}>{urlServidor ? urlServidor.replace('http://', '').replace('/api', '') : 'N/A'}</Text>
+                </View>
+              </View>
+
+              <View style={styles.infoFieldRow}>
+                <View style={styles.infoFieldHalf}>
+                  <Text style={styles.infoFieldLabel}>SETOR DE MISSÃO</Text>
+                  <Text style={styles.infoFieldVal}>ROTEAMENTO DTN</Text>
+                </View>
+                <View style={styles.infoFieldHalf}>
+                  <Text style={styles.infoFieldLabel}>SECURITY HASH</Text>
+                  <Text style={styles.infoFieldValHash}>
+                    {tokenJwt ? tokenJwt.substring(0, 10).toUpperCase() : 'N/A'}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
 
-          <SpaceButton
-            title="Revogar Autorizações"
-            variant="danger"
-            onPress={handleLogout}
-            style={styles.actionBtn}
-          />
+          <View style={styles.badgeFooter}>
+            <View style={styles.badgeStatusPill}>
+              <ShieldCheck color={colors.green} size={12} style={{ marginRight: 4 }} />
+              <Text style={styles.badgeStatusText}>CONEXÃO ATIVA</Text>
+            </View>
+            
+            <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+              <LogOut color={colors.red} size={14} style={{ marginRight: 6 }} />
+              <Text style={styles.logoutBtnText}>Encerrar Turno</Text>
+            </TouchableOpacity>
+          </View>
         </SpaceCard>
       ) : (
-        <SpaceCard borderAccent="purple" style={styles.sessionCard}>
+        <SpaceCard style={styles.sessionCard}>
           <View style={styles.cardHeader}>
-            <Shield color="#8A57FF" size={24} style={{ marginRight: 10 }} />
+            <Shield color={colors.accent} size={24} style={{ marginRight: 10 }} />
             <View>
               <Text style={styles.operatorTitle}>Login do Operador</Text>
               <Text style={styles.operatorSubtitle}>Insira as Credenciais Aeroespaciais</Text>
@@ -262,10 +289,53 @@ export default function Profile() {
         </SpaceCard>
       )}
 
-      {/* Gateway Connection Settings card */}
-      <SpaceCard borderAccent="cyan" style={styles.connectionCard}>
+      {/* APARÊNCIA / SELETOR DE TEMA SEGMENTADO (Apple Settings Style) */}
+      <SpaceCard style={styles.appearanceCard}>
         <View style={styles.cardHeader}>
-          <Network color="#00F2FE" size={24} style={{ marginRight: 10 }} />
+          <Moon color={colors.accent} size={24} style={{ marginRight: 10 }} />
+          <View>
+            <Text style={styles.operatorTitle}>Tema Visual</Text>
+            <Text style={styles.operatorSubtitle}>Personalizar a Aparência do Aplicativo</Text>
+          </View>
+        </View>
+
+        <View style={styles.segmentedContainer}>
+          <TouchableOpacity 
+            style={[styles.segmentBtn, tema === 'light' && styles.segmentBtnActive]} 
+            onPress={() => setTema('light')}
+          >
+            <Sun color={tema === 'light' ? colors.accent : colors.textSecondary} size={16} style={{ marginBottom: 4 }} />
+            <Text style={[styles.segmentText, tema === 'light' && styles.segmentTextActive]}>Claro</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.segmentBtn, tema === 'dark' && styles.segmentBtnActive]} 
+            onPress={() => setTema('dark')}
+          >
+            <Moon color={tema === 'dark' ? colors.accent : colors.textSecondary} size={16} style={{ marginBottom: 4 }} />
+            <Text style={[styles.segmentText, tema === 'dark' && styles.segmentTextActive]}>Escuro</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.segmentBtn, tema === 'system' && styles.segmentBtnActive]} 
+            onPress={() => setTema('system')}
+          >
+            <Monitor color={tema === 'system' ? colors.accent : colors.textSecondary} size={16} style={{ marginBottom: 4 }} />
+            <Text style={[styles.segmentText, tema === 'system' && styles.segmentTextActive]}>Auto</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.themeInfoText}>
+          {tema === 'system' 
+            ? 'O aplicativo está seguindo a aparência do sistema operacional.' 
+            : `Aparência definida manualmente para modo ${tema === 'light' ? 'Claro' : 'Escuro'}.`}
+        </Text>
+      </SpaceCard>
+
+      {/* Gateway Connection Settings card */}
+      <SpaceCard style={styles.connectionCard}>
+        <View style={styles.cardHeader}>
+          <Network color={colors.accent} size={24} style={{ marginRight: 10 }} />
           <View>
             <Text style={styles.operatorTitle}>Gateway Interplanetário</Text>
             <Text style={styles.operatorSubtitle}>Configurar Endpoints de Destino do Nó DTN</Text>
@@ -280,18 +350,17 @@ export default function Profile() {
           keyboardType="url"
         />
 
-        {/* Diagnostic ping indicators */}
         <View style={styles.pingIndicatorRow}>
           <Text style={styles.pingLabel}>Telemetria de Conexão:</Text>
           {pingStatus === 'SUCCESS' && (
             <View style={styles.pingBadgeSuccess}>
-              <CheckCircle2 color="#00F5A0" size={12} style={{ marginRight: 4 }} />
+              <CheckCircle2 color={colors.green} size={12} style={{ marginRight: 4 }} />
               <Text style={styles.pingTextSuccess}>ONLINE ({pingLatency}ms)</Text>
             </View>
           )}
           {pingStatus === 'FAILED' && (
             <View style={styles.pingBadgeFailed}>
-              <AlertTriangle color="#FF007A" size={12} style={{ marginRight: 4 }} />
+              <AlertTriangle color={colors.red} size={12} style={{ marginRight: 4 }} />
               <Text style={styles.pingTextFailed}>INACESSÍVEL</Text>
             </View>
           )}
@@ -317,141 +386,284 @@ export default function Profile() {
           />
         </View>
       </SpaceCard>
+      
+      {/* Footer spacer to clear bottom tabbar */}
+      <View style={{ height: 100 }} />
     </SpaceBackground>
   );
 }
 
-const styles = StyleSheet.create({
-  sessionCard: {
-    padding: 16,
-    marginBottom: 16,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#232A46',
-    paddingBottom: 12,
-  },
-  operatorTitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  operatorSubtitle: {
-    color: '#94A3B8',
-    fontSize: 11,
-  },
-  helperText: {
-    color: '#64748B',
-    fontSize: 12,
-    lineHeight: 16,
-    marginBottom: 16,
-  },
-  codeSuggest: {
-    color: '#00F2FE',
-    fontFamily: 'monospace',
-    fontSize: 11,
-  },
-  operatorDetails: {
-    backgroundColor: '#0A0D1A',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#181E35',
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  detailLabel: {
-    color: '#64748B',
-    fontSize: 12,
-  },
-  detailValue: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  detailCode: {
-    color: '#8A57FF',
-    fontSize: 13,
-    fontWeight: '600',
-    fontFamily: 'monospace',
-  },
-  badgeActive: {
-    backgroundColor: '#05C18020',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#05C18040',
-  },
-  badgeTextActive: {
-    color: '#00F5A0',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  actionBtn: {
-    width: '100%',
-  },
-  connectionCard: {
-    padding: 16,
-  },
-  pingIndicatorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  pingLabel: {
-    color: '#64748B',
-    fontSize: 12,
-    marginRight: 8,
-  },
-  pingTextIdle: {
-    color: '#94A3B8',
-    fontSize: 12,
-  },
-  pingBadgeSuccess: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#05C18015',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  pingTextSuccess: {
-    color: '#00F5A0',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  pingBadgeFailed: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FF007A15',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  pingTextFailed: {
-    color: '#FF007A',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  buttonGroup: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  pingBtn: {
-    flex: 1,
-    marginRight: 8,
-  },
-  saveBtn: {
-    flex: 1,
-    marginLeft: 8,
-  },
-});
+const getStyles = (colors: any, temaAtivo: 'light' | 'dark') => {
+  const isDark = temaAtivo === 'dark';
+  return StyleSheet.create({
+    badgeContainer: {
+      padding: 16,
+      marginBottom: 16,
+    },
+    badgeHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      paddingBottom: 10,
+    },
+    badgeOrgText: {
+      color: colors.accent,
+      fontSize: 10,
+      fontWeight: 'bold',
+      letterSpacing: 0.5,
+    },
+    badgeBody: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    avatarContainer: {
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    avatarRingOuter: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    avatarRingInner: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      backgroundColor: colors.inputBackground,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    clearanceBadge: {
+      position: 'absolute',
+      bottom: -6,
+      backgroundColor: colors.border,
+      borderRadius: 6,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderWidth: 1,
+      borderColor: colors.cardBackground,
+    },
+    clearanceText: {
+      color: colors.text,
+      fontSize: 7,
+      fontWeight: 'bold',
+    },
+    badgeInfoCol: {
+      flex: 1,
+    },
+    infoField: {
+      marginBottom: 8,
+    },
+    infoFieldRow: {
+      flexDirection: 'row',
+      marginBottom: 8,
+    },
+    infoFieldHalf: {
+      flex: 1,
+      paddingRight: 4,
+    },
+    infoFieldLabel: {
+      color: colors.textSecondary,
+      fontSize: 8,
+      fontWeight: 'bold',
+      letterSpacing: 0.5,
+      marginBottom: 2,
+    },
+    infoFieldValName: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+    infoFieldValCode: {
+      color: colors.accent,
+      fontSize: 11,
+      fontWeight: 'bold',
+      fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+    },
+    infoFieldVal: {
+      color: colors.text,
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    infoFieldValHash: {
+      color: colors.accent,
+      fontSize: 10,
+      fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+      fontWeight: 'bold',
+    },
+    badgeFooter: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 12,
+    },
+    badgeStatusPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: `${colors.green}15`,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: `${colors.green}30`,
+    },
+    badgeStatusText: {
+      color: colors.green,
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
+    logoutBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 4,
+    },
+    logoutBtnText: {
+      color: colors.red,
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    sessionCard: {
+      padding: 16,
+      marginBottom: 16,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      paddingBottom: 12,
+    },
+    operatorTitle: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    operatorSubtitle: {
+      color: colors.textSecondary,
+      fontSize: 11,
+    },
+    helperText: {
+      color: colors.textSecondary,
+      fontSize: 12,
+      lineHeight: 16,
+      marginBottom: 16,
+    },
+    codeSuggest: {
+      color: colors.accent,
+      fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+      fontSize: 11,
+    },
+    actionBtn: {
+      width: '100%',
+    },
+    appearanceCard: {
+      padding: 16,
+      marginBottom: 16,
+    },
+    segmentedContainer: {
+      flexDirection: 'row',
+      backgroundColor: colors.inputBackground,
+      borderRadius: 10,
+      padding: 3,
+      marginBottom: 12,
+    },
+    segmentBtn: {
+      flex: 1,
+      paddingVertical: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 8,
+    },
+    segmentBtnActive: {
+      backgroundColor: isDark ? '#3A3A3C' : '#FFFFFF',
+      shadowColor: '#000000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+    segmentText: {
+      color: colors.textSecondary,
+      fontSize: 11,
+      fontWeight: '500',
+    },
+    segmentTextActive: {
+      color: colors.text,
+      fontWeight: '600',
+    },
+    themeInfoText: {
+      color: colors.textSecondary,
+      fontSize: 11,
+      fontStyle: 'italic',
+      paddingHorizontal: 4,
+    },
+    connectionCard: {
+      padding: 16,
+      marginBottom: 16,
+    },
+    pingIndicatorRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    pingLabel: {
+      color: colors.textSecondary,
+      fontSize: 12,
+      marginRight: 8,
+    },
+    pingTextIdle: {
+      color: colors.textSecondary,
+      fontSize: 12,
+    },
+    pingBadgeSuccess: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: `${colors.green}15`,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    pingTextSuccess: {
+      color: colors.green,
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    pingBadgeFailed: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: `${colors.red}15`,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    pingTextFailed: {
+      color: colors.red,
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    buttonGroup: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    pingBtn: {
+      flex: 1,
+      marginRight: 8,
+    },
+    saveBtn: {
+      flex: 1,
+      marginLeft: 8,
+    },
+  });
+};
